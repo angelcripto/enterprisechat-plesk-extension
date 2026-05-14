@@ -52,17 +52,33 @@ class Modules_Enterprisechat_EnterpriseChatService
     }
 
     /**
-     * Devuelve la contraseña admin inicial UNA SOLA VEZ y la borra del disco
-     * para que no quede en claro. Si ya se consumió, devuelve null.
+     * Devuelve la contraseña admin inicial UNA SOLA VEZ y la borra del disco.
+     * Plesk demota la UI a psaadm; el archivo .first-admin-password vive en
+     * 0600 owner=enterprisechat. Por eso el read+unlink se delega al wrapper
+     * sbin/password (consume-first), que sí corre con privilegios.
      */
     public static function consumeFirstPassword(): ?string
     {
-        if (!is_readable(self::FIRST_PWD)) {
+        $r = pm_ApiCli::callSbin('password', ['consume-first'], pm_ApiCli::RESULT_FULL);
+        if ((int)($r['code'] ?? 1) !== 0) {
             return null;
         }
-        $pwd = trim((string)@file_get_contents(self::FIRST_PWD));
-        @unlink(self::FIRST_PWD);
+        $pwd = trim((string)($r['stdout'] ?? ''));
         return $pwd !== '' ? $pwd : null;
+    }
+
+    /**
+     * Restablece la contraseña del admin invocando el CLI del propio server
+     * (--reset-admin-password) vía el wrapper privilegiado. Devuelve el
+     * array RESULT_FULL para que el controller propague stderr.
+     */
+    public static function resetAdminPassword(string $newPassword): array
+    {
+        return pm_ApiCli::callSbin(
+            'password',
+            ['reset-admin', $newPassword],
+            pm_ApiCli::RESULT_FULL
+        );
     }
 
     // ----- internos ----------------------------------------------------

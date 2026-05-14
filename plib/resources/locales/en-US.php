@@ -52,7 +52,18 @@ return [
     'firstPasswordOnce'     => 'This password is shown only once. If lost, regenerate it from the configuration page.',
 
     // Configuration screen
-    'configTitle'           => 'Server configuration',
+    'configTitle'           => 'Configuration',
+    'passwordResetTitle'    => 'Change administrator password',
+    'passwordResetHelp'     => 'Reset the password of the chat "admin" account. The change takes effect immediately; existing sessions remain valid until their JWT expires.',
+    'lblNewPassword'        => 'New password',
+    'lblConfirmPassword'    => 'Confirm password',
+    'btnResetPassword'      => 'Reset password',
+    'msgPasswordReset'      => 'Administrator password reset successfully.',
+    'errPasswordMismatch'   => 'The two passwords do not match.',
+    'errPasswordTooShort'   => 'Password must be at least 8 characters.',
+    'errResetFailed'        => 'Could not reset the password:',
+
+    'configTitleLegacy'     => 'Server configuration',
     'sectionJwt'            => 'Session / JWT',
     'lblLifetime'           => 'Token lifetime (minutes)',
     'hintLifetime'          => 'Between 5 and 1440. Default is 60.',

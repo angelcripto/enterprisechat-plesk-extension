@@ -1,36 +1,43 @@
 #!/usr/bin/env bash
 #
-# Wrapper privilegiado que escribe / borra snippets nginx para
-# EnterpriseChat. Reemplaza el uso de pm_ApiCli::callSbin('filemng', ...) +
-# cp2perm — Plesk no permite cp2perm como usuario root.
+# Wrapper privilegiado que gestiona "Additional nginx directives" del dominio
+# elegido para enrutar el reverse proxy al servidor EnterpriseChat.
 #
-# Restricciones de seguridad:
-#   - Solo opera sobre /etc/nginx/plesk.conf.d/vhosts/enterprisechat-<dom>.conf.
-#   - <dom> debe ser un FQDN válido (letras, dígitos, puntos, guiones).
-#   - Si plesk httpdmng está disponible se reconfigura el vhost para que el
-#     panel respete el snippet.
+# La ruta correcta en Plesk Obsidian es
+#   /var/www/vhosts/system/<dominio>/conf/vhost_nginx.conf
+# que Plesk incluye DENTRO del bloque `server { }` del vhost al regenerar.
+# No usar /etc/nginx/plesk.conf.d/vhosts/*.conf — esos se cargan FUERA del
+# bloque server y un `location { }` ahí rompe nginx.
 #
-# Uso:
-#   nginx-snippet write <domain> <base64-content>
-#   nginx-snippet rm    <domain>
+# Acciones:
+#   write <domain> <base64-content>
+#   rm    <domain>
+#   list
+#
+# Restricciones:
+#   - <dominio> debe pasar la regex de FQDN.
+#   - Se escribe / borra únicamente vhost_nginx.conf y se marca como gestionado
+#     por la extensión vía cabecera para detectar conflicto con otro origen.
 #
 set -euo pipefail
 
-ACTION="${1:-}"
+VHOSTS_ROOT=/var/www/vhosts/system
+MARK='# Managed by Plesk extension EnterpriseChat — do not edit by hand.'
 
+ACTION="${1:-}"
 if [[ -z "$ACTION" ]]; then
     echo "uso: nginx-snippet (write|rm|list) [<domain>] [<base64-content>]" >&2
     exit 2
 fi
 
-SNIPPETS_DIR=/etc/nginx/plesk.conf.d/vhosts
-
-# `list` no toma argumentos: enumera dominios bindeados por nombre de archivo.
 if [[ "$ACTION" == "list" ]]; then
     shopt -s nullglob
-    for f in "$SNIPPETS_DIR"/enterprisechat-*.conf; do
-        name="$(basename "$f" .conf)"
-        echo "${name#enterprisechat-}"
+    for f in "$VHOSTS_ROOT"/*/conf/vhost_nginx.conf; do
+        if head -n1 "$f" 2>/dev/null | grep -qF "$MARK"; then
+            dom="${f#$VHOSTS_ROOT/}"
+            dom="${dom%%/*}"
+            echo "$dom"
+        fi
     done
     exit 0
 fi
@@ -40,28 +47,37 @@ if [[ -z "$DOMAIN" ]]; then
     echo "nginx-snippet: falta dominio para acción '$ACTION'" >&2
     exit 2
 fi
-
-# Sanitiza dominio: solo FQDNs válidos (sin path traversal).
 if [[ ! "$DOMAIN" =~ ^[a-z0-9]([a-z0-9.\-]*[a-z0-9])?$ ]]; then
     echo "nginx-snippet: dominio inválido: $DOMAIN" >&2
     exit 2
 fi
 
-SNIPPET="$SNIPPETS_DIR/enterprisechat-${DOMAIN}.conf"
+CONF_DIR="$VHOSTS_ROOT/$DOMAIN/conf"
+SNIPPET="$CONF_DIR/vhost_nginx.conf"
 
 case "$ACTION" in
     write)
+        if [[ ! -d "$CONF_DIR" ]]; then
+            echo "nginx-snippet: $CONF_DIR no existe (¿se ha creado el dominio en Plesk?)" >&2
+            exit 1
+        fi
         CONTENT_B64="${3:-}"
         if [[ -z "$CONTENT_B64" ]]; then
             echo "nginx-snippet write: falta contenido base64" >&2
             exit 2
         fi
-        mkdir -p "$SNIPPETS_DIR"
+        # Si ya existe pero NO es nuestro, no lo pisamos.
+        if [[ -f "$SNIPPET" ]] && ! head -n1 "$SNIPPET" | grep -qF "$MARK"; then
+            echo "nginx-snippet: $SNIPPET ya existe y no fue creado por esta extensión; abortando para no pisar configuración manual." >&2
+            exit 1
+        fi
         printf '%s' "$CONTENT_B64" | base64 -d > "$SNIPPET"
         chmod 0644 "$SNIPPET"
         ;;
     rm)
-        rm -f "$SNIPPET"
+        if [[ -f "$SNIPPET" ]] && head -n1 "$SNIPPET" | grep -qF "$MARK"; then
+            rm -f "$SNIPPET"
+        fi
         ;;
     *)
         echo "nginx-snippet: acción desconocida '$ACTION'" >&2

@@ -56,7 +56,18 @@ $messages = [
     'firstPasswordOnce'     => 'Esta contraseña solo se muestra una vez. Si la pierdes, podrás regenerarla desde la configuración.',
 
     // Pantalla configuración
-    'configTitle'           => 'Configuración del servidor',
+    'configTitle'           => 'Configuración',
+    'passwordResetTitle'    => 'Cambiar contraseña del administrador',
+    'passwordResetHelp'     => 'Restablece la contraseña del usuario "admin" del chat. El cambio toma efecto inmediato; las sesiones existentes seguirán siendo válidas hasta que expire el JWT.',
+    'lblNewPassword'        => 'Nueva contraseña',
+    'lblConfirmPassword'    => 'Confirmar contraseña',
+    'btnResetPassword'      => 'Restablecer contraseña',
+    'msgPasswordReset'      => 'Contraseña del administrador restablecida correctamente.',
+    'errPasswordMismatch'   => 'Las dos contraseñas no coinciden.',
+    'errPasswordTooShort'   => 'La contraseña debe tener al menos 8 caracteres.',
+    'errResetFailed'        => 'No se pudo restablecer la contraseña:',
+
+    'configTitleLegacy'     => 'Configuración del servidor',
     'sectionJwt'            => 'Sesión / JWT',
     'lblLifetime'           => 'Duración del token (minutos)',
     'hintLifetime'          => 'Entre 5 y 1440. Por defecto 60.',
