@@ -22,11 +22,16 @@ class IndexController extends pm_Controller_Action
                 'title'  => pm_Locale::lmsg('tabStatus'),
                 'action' => 'index',
             ],
-            [
-                'title'      => pm_Locale::lmsg('tabDomains'),
-                'action'     => 'domains',
-                'controller' => 'index',
-            ],
+            // El tab "Dominios" queda deshabilitado hasta que sepamos
+            // configurar bien un reverse proxy en Plesk (mod_proxy en Apache
+            // o nginx delante, sin obligar al admin a tocar el switch
+            // global). Mientras tanto el servicio escucha en :5080 y se
+            // accede por IP+puerto, o el admin configura el proxy a mano.
+            // [
+            //     'title'      => pm_Locale::lmsg('tabDomains'),
+            //     'action'     => 'domains',
+            //     'controller' => 'index',
+            // ],
             [
                 'title'      => pm_Locale::lmsg('tabConfig'),
                 'controller' => 'config',
@@ -72,77 +77,24 @@ class IndexController extends pm_Controller_Action
 
     public function domainsAction()
     {
-        $this->view->bindings = Modules_Enterprisechat_NginxConfig::listBindings();
+        // Feature de dominios enlazados pausada (ver init()): el reverse
+        // proxy automático en Plesk se mete en el avispero de "nginx
+        // delante de Apache" vs "Apache solo" + duplicate location + mod
+        // requirements. Hasta tener una implementación robusta dejamos el
+        // acceso directo por IP:5080 o configuración manual.
+        $this->_helper->redirector('index');
     }
 
-    public function createSubdomainAction()
-    {
-        $form = $this->buildSubdomainForm();
-
-        if ($this->getRequest()->isPost() && $form->isValid($this->getRequest()->getPost())) {
-            try {
-                $prefix = strtolower((string)$form->getValue('prefix'));
-                $parent = strtolower((string)$form->getValue('parent'));
-
-                $r = pm_ApiCli::callSbin(
-                    'subdomain-create',
-                    [$prefix, $parent],
-                    pm_ApiCli::RESULT_FULL
-                );
-                if ((int)($r['code'] ?? 1) !== 0) {
-                    throw new pm_Exception(
-                        pm_Locale::lmsg('errSubdomainCreate') . ' ' .
-                        trim((string)($r['stderr'] ?? $r['stdout'] ?? ''))
-                    );
-                }
-
-                $fqdn = trim((string)($r['stdout'] ?? "$prefix.$parent"));
-                Modules_Enterprisechat_NginxConfig::bind($fqdn, '/');
-
-                $this->_status->addMessage(
-                    'info',
-                    pm_Locale::lmsg('msgBound', ['d' => $fqdn])
-                );
-                $this->_helper->json([
-                    'redirect' => pm_Context::getActionUrl('index', 'domains'),
-                ]);
-                return;
-            } catch (Exception $e) {
-                $this->_status->addMessage('error', $e->getMessage());
-            }
-        }
-
-        $this->view->form = $form;
-    }
-
-    public function bindExistingAction()
-    {
-        $form = $this->buildBindExistingForm();
-
-        if ($this->getRequest()->isPost() && $form->isValid($this->getRequest()->getPost())) {
-            try {
-                $domain   = strtolower((string)$form->getValue('domain'));
-                $location = (string)$form->getValue('location');
-                Modules_Enterprisechat_NginxConfig::bind($domain, $location);
-
-                $this->_status->addMessage(
-                    'info',
-                    pm_Locale::lmsg('msgBound', ['d' => $domain])
-                );
-                $this->_helper->json([
-                    'redirect' => pm_Context::getActionUrl('index', 'domains'),
-                ]);
-                return;
-            } catch (Exception $e) {
-                $this->_status->addMessage('error', $e->getMessage());
-            }
-        }
-
-        $this->view->form = $form;
-    }
+    public function createSubdomainAction() { $this->_helper->redirector('index'); }
+    public function bindExistingAction()    { $this->_helper->redirector('index'); }
 
     public function unbindAction()
     {
+        // Feature pausada. Acción sigue existiendo solo para no romper
+        // URLs viejas; redirige a la home.
+        $this->_helper->redirector('index');
+        return;
+
         if (!$this->getRequest()->isPost()) {
             $this->getResponse()->setHttpResponseCode(405);
             $this->_helper->json(['ok' => false, 'error' => 'POST required']);

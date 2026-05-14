@@ -83,12 +83,38 @@ class Modules_Enterprisechat_NginxConfig
     private static function render(string $domain, string $location): string
     {
         $backend = self::BACKEND;
+
+        // Plesk ya genera su propio `location /` (prefix) en el vhost del
+        // dominio para hacer proxy a Apache. Si declaramos otra location `/`
+        // como prefix nginx falla con
+        //   nginx: [emerg] duplicate location "/"
+        // y httpdmng revierte el vhost a Apache solo (sin nginx delante).
+        //
+        // Usamos una location regex (~) o exact (=) — nginx prioriza ambas
+        // sobre la prefix de Plesk y no genera duplicado.
+        //   - Si el usuario monta en "/" usamos `location ~ "^/"`, que
+        //     captura cualquier path vía regex (mayor prioridad que prefix).
+        //   - Si el usuario monta en /chat/ usamos `location ^~ /chat/`
+        //     (prefix preferred, también supera al prefix `/` por
+        //     especificidad).
+        if ($location === '/') {
+            $locDirective = 'location ~ "^/"';
+            // Sin URI en proxy_pass para que nginx mantenga el path
+            // original al hacer match por regex.
+            $proxyPass = "http://{$backend}";
+        } else {
+            $locDirective = 'location ^~ ' . $location;
+            // Path-mounted: trailing slash mantiene el strip del prefijo
+            // del location antes de llegar al backend.
+            $proxyPass = "http://{$backend}/";
+        }
+
         return <<<NGINX
 # Managed by Plesk extension EnterpriseChat — do not edit by hand.
 # Domain: {$domain}
 
-location {$location} {
-    proxy_pass http://{$backend}/;
+{$locDirective} {
+    proxy_pass {$proxyPass};
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
