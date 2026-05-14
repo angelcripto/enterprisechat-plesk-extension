@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#
+# Wrapper privilegiado que escribe / borra snippets nginx para
+# EnterpriseChat. Reemplaza el uso de pm_ApiCli::callSbin('filemng', ...) +
+# cp2perm — Plesk no permite cp2perm como usuario root.
+#
+# Restricciones de seguridad:
+#   - Solo opera sobre /etc/nginx/plesk.conf.d/vhosts/enterprisechat-<dom>.conf.
+#   - <dom> debe ser un FQDN válido (letras, dígitos, puntos, guiones).
+#   - Si plesk httpdmng está disponible se reconfigura el vhost para que el
+#     panel respete el snippet.
+#
+# Uso:
+#   nginx-snippet write <domain> <base64-content>
+#   nginx-snippet rm    <domain>
+#
+set -euo pipefail
+
+ACTION="${1:-}"
+
+if [[ -z "$ACTION" ]]; then
+    echo "uso: nginx-snippet (write|rm|list) [<domain>] [<base64-content>]" >&2
+    exit 2
+fi
+
+SNIPPETS_DIR=/etc/nginx/plesk.conf.d/vhosts
+
+# `list` no toma argumentos: enumera dominios bindeados por nombre de archivo.
+if [[ "$ACTION" == "list" ]]; then
+    shopt -s nullglob
+    for f in "$SNIPPETS_DIR"/enterprisechat-*.conf; do
+        name="$(basename "$f" .conf)"
+        echo "${name#enterprisechat-}"
+    done
+    exit 0
+fi
+
+DOMAIN="${2:-}"
+if [[ -z "$DOMAIN" ]]; then
+    echo "nginx-snippet: falta dominio para acción '$ACTION'" >&2
+    exit 2
+fi
+
+# Sanitiza dominio: solo FQDNs válidos (sin path traversal).
+if [[ ! "$DOMAIN" =~ ^[a-z0-9]([a-z0-9.\-]*[a-z0-9])?$ ]]; then
+    echo "nginx-snippet: dominio inválido: $DOMAIN" >&2
+    exit 2
+fi
+
+SNIPPET="$SNIPPETS_DIR/enterprisechat-${DOMAIN}.conf"
+
+case "$ACTION" in
+    write)
+        CONTENT_B64="${3:-}"
+        if [[ -z "$CONTENT_B64" ]]; then
+            echo "nginx-snippet write: falta contenido base64" >&2
+            exit 2
+        fi
+        mkdir -p "$SNIPPETS_DIR"
+        printf '%s' "$CONTENT_B64" | base64 -d > "$SNIPPET"
+        chmod 0644 "$SNIPPET"
+        ;;
+    rm)
+        rm -f "$SNIPPET"
+        ;;
+    *)
+        echo "nginx-snippet: acción desconocida '$ACTION'" >&2
+        exit 2
+        ;;
+esac
+
+if command -v plesk >/dev/null 2>&1; then
+    plesk sbin httpdmng --reconfigure-domain "$DOMAIN" >/dev/null 2>&1 || true
+fi

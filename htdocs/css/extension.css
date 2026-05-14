@@ -49,6 +49,13 @@
 .ec-list li { padding: 0.25rem 0; border-bottom: 1px solid #f2f4f6; }
 .ec-list li:last-child { border-bottom: 0; }
 
+.ec-back {
+    margin: 0 0 1rem 0;
+    font-size: 0.95em;
+}
+.ec-back a { text-decoration: none; }
+.ec-back a:hover { text-decoration: underline; }
+
 .ec-muted { color: #6a737d; font-style: italic; }
 .ec-warn  { color: #b08800; font-size: 0.9em; }
 .ec-hint  { display: block; color: #6a737d; font-size: 0.85em; margin-top: 0.25em; }

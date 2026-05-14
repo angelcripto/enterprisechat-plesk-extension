@@ -1,85 +1,84 @@
 <?php
 /**
- * Genera y registra snippets nginx para mapear un dominio o subdominio Plesk
- * al servidor EnterpriseChat local (127.0.0.1:5080). Crítico para que
- * SignalR funcione:
+ * Gestiona snippets nginx por dominio para enrutar el reverse proxy hasta
+ * el servidor local en 127.0.0.1:5080 con soporte WebSocket para SignalR.
  *
- *   - proxy_http_version 1.1
- *   - headers Upgrade / Connection
- *   - read/send timeouts largos (long-lived WS)
- *   - proxy_buffering off
+ * El snippet vive en /etc/nginx/plesk.conf.d/vhosts/enterprisechat-<dom>.conf
+ * y se escribe / borra mediante el wrapper privilegiado /sbin/nginx-snippet
+ * (Plesk no permite usar filemng cp2perm escribiendo en /etc/nginx).
  *
- * El snippet se escribe en /etc/nginx/plesk.conf.d/vhosts/enterprisechat-<id>.conf
- * y luego se llama a `plesk sbin httpdmng --reconfigure-domain <dominio>`
- * para que Plesk regenere el vhost incluyendo el archivo.
+ * Crítico SignalR: el snippet incluye proxy_http_version 1.1 + headers
+ * Upgrade/Connection + timeouts 1h. Sin esto el cliente cae a long-polling.
  */
 class Modules_Enterprisechat_NginxConfig
 {
-    const SNIPPETS_DIR = '/etc/nginx/plesk.conf.d/vhosts';
     const BACKEND      = '127.0.0.1:5080';
+    const SNIPPETS_DIR = '/etc/nginx/plesk.conf.d/vhosts';
 
     /**
-     * @param string $domain   Nombre exacto del dominio Plesk (ej. chat.cliente.com)
-     * @param string $location Ruta base donde montar el chat (ej. "/" o "/chat/")
+     * @param string $domain   FQDN (chat.cliente.com, etc.)
+     * @param string $location Ruta base ("/" o "/chat/", etc.)
      */
     public static function bind(string $domain, string $location = '/'): void
     {
-        $domain = self::sanitizeDomain($domain);
+        $domain   = self::sanitizeDomain($domain);
         $location = self::sanitizeLocation($location);
 
-        if (!is_dir(self::SNIPPETS_DIR)) {
-            pm_ApiCli::callSbin(
-                'filemng',
-                ['root', 'mkdir', '-p', self::SNIPPETS_DIR]
+        $content = self::render($domain, $location);
+        $b64     = base64_encode($content);
+
+        $r = pm_ApiCli::callSbin(
+            'nginx-snippet',
+            ['write', $domain, $b64],
+            pm_ApiCli::RESULT_FULL
+        );
+        if ((int)($r['code'] ?? 1) !== 0) {
+            throw new pm_Exception(
+                'nginx-snippet write falló: ' . ($r['stderr'] ?? $r['stdout'] ?? '')
             );
         }
-
-        $path = self::snippetPath($domain);
-        $content = self::render($domain, $location);
-
-        $tmp = tempnam(sys_get_temp_dir(), 'ecnginx_');
-        file_put_contents($tmp, $content);
-        pm_ApiCli::callSbin('filemng', ['root', 'cp2perm', $tmp, $path, '0644']);
-        @unlink($tmp);
-
-        pm_ApiCli::callSbin(
-            'httpdmng',
-            ['--reconfigure-domain', $domain]
-        );
     }
 
     public static function unbind(string $domain): void
     {
         $domain = self::sanitizeDomain($domain);
-        $path = self::snippetPath($domain);
-        if (file_exists($path)) {
-            pm_ApiCli::callSbin('filemng', ['root', 'rm', $path]);
-            pm_ApiCli::callSbin('httpdmng', ['--reconfigure-domain', $domain]);
+
+        $r = pm_ApiCli::callSbin(
+            'nginx-snippet',
+            ['rm', $domain],
+            pm_ApiCli::RESULT_FULL
+        );
+        if ((int)($r['code'] ?? 1) !== 0) {
+            throw new pm_Exception(
+                'nginx-snippet rm falló: ' . ($r['stderr'] ?? $r['stdout'] ?? '')
+            );
         }
     }
 
     /**
-     * Devuelve listado de dominios actualmente bindeados a EnterpriseChat
-     * leyendo el directorio de snippets.
+     * Listado de dominios bindeados. psaadm no puede leer
+     * /etc/nginx/plesk.conf.d/vhosts/ directamente; lo enumera el wrapper.
      */
     public static function listBindings(): array
     {
-        $out = [];
-        foreach ((array)@glob(self::SNIPPETS_DIR . '/enterprisechat-*.conf') as $file) {
-            if (preg_match('~/enterprisechat-(.+)\.conf$~', $file, $m)) {
-                $out[] = $m[1];
-            }
+        $r = pm_ApiCli::callSbin(
+            'nginx-snippet',
+            ['list'],
+            pm_ApiCli::RESULT_FULL
+        );
+        if ((int)($r['code'] ?? 1) !== 0) {
+            return [];
         }
-        sort($out);
-        return $out;
+        $out = trim((string)($r['stdout'] ?? ''));
+        if ($out === '') {
+            return [];
+        }
+        $domains = preg_split('/\s+/', $out) ?: [];
+        sort($domains);
+        return array_values(array_unique(array_filter($domains)));
     }
 
-    // ----- internos ----------------------------------------------------
-
-    private static function snippetPath(string $domain): string
-    {
-        return self::SNIPPETS_DIR . '/enterprisechat-' . $domain . '.conf';
-    }
+    // ----- helpers privados ----------------------------------------------
 
     private static function render(string $domain, string $location): string
     {

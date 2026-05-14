@@ -49,17 +49,43 @@ class IndexController extends pm_Controller_Action
         $request = $this->getRequest();
 
         if ($request->isPost()) {
-            $domain = trim((string)$request->getParam('domain', ''));
-            $path   = trim((string)$request->getParam('location', '/'));
             $action = (string)$request->getParam('do', 'bind');
 
             try {
-                if ($action === 'unbind') {
-                    Modules_Enterprisechat_NginxConfig::unbind($domain);
-                    $this->_status->addMessage('info', pm_Locale::lmsg('msgUnbound', ['d' => $domain]));
-                } else {
-                    Modules_Enterprisechat_NginxConfig::bind($domain, $path);
-                    $this->_status->addMessage('info', pm_Locale::lmsg('msgBound', ['d' => $domain]));
+                switch ($action) {
+                    case 'unbind':
+                        $domain = trim((string)$request->getParam('domain', ''));
+                        Modules_Enterprisechat_NginxConfig::unbind($domain);
+                        $this->_status->addMessage('info', pm_Locale::lmsg('msgUnbound', ['d' => $domain]));
+                        break;
+
+                    case 'subdomain':
+                        // Crea el subdominio en Plesk vía sbin wrapper y, si
+                        // todo va bien, lo enlaza en la raíz "/".
+                        $prefix = strtolower(trim((string)$request->getParam('prefix', 'chat')));
+                        $parent = strtolower(trim((string)$request->getParam('parent', '')));
+                        $r = pm_ApiCli::callSbin(
+                            'subdomain-create',
+                            [$prefix, $parent],
+                            pm_ApiCli::RESULT_FULL
+                        );
+                        if ((int)($r['code'] ?? 1) !== 0) {
+                            throw new pm_Exception(
+                                'subdomain-create falló: ' . trim((string)($r['stderr'] ?? $r['stdout'] ?? ''))
+                            );
+                        }
+                        $fqdn = trim((string)($r['stdout'] ?? "$prefix.$parent"));
+                        Modules_Enterprisechat_NginxConfig::bind($fqdn, '/');
+                        $this->_status->addMessage('info', pm_Locale::lmsg('msgBound', ['d' => $fqdn]));
+                        break;
+
+                    case 'bind':
+                    default:
+                        $domain = trim((string)$request->getParam('domain', ''));
+                        $path   = trim((string)$request->getParam('location', '/chat/'));
+                        Modules_Enterprisechat_NginxConfig::bind($domain, $path);
+                        $this->_status->addMessage('info', pm_Locale::lmsg('msgBound', ['d' => $domain]));
+                        break;
                 }
             } catch (Exception $e) {
                 $this->_status->addMessage('error', $e->getMessage());

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Crea un subdominio en Plesk vía `plesk bin subdomain --create`. Wrapper
+# privilegiado porque el CLI de Plesk requiere root.
+#
+# Uso:
+#   subdomain-create <prefix> <parent-domain>
+#
+# Salida en stdout: FQDN resultante. Exit 0 si éxito o ya existía.
+#
+set -euo pipefail
+
+PREFIX="${1:-}"
+PARENT="${2:-}"
+
+if [[ -z "$PREFIX" || -z "$PARENT" ]]; then
+    echo "uso: subdomain-create <prefix> <parent-domain>" >&2
+    exit 2
+fi
+
+if [[ ! "$PREFIX" =~ ^[a-z0-9]([a-z0-9\-]*[a-z0-9])?$ ]]; then
+    echo "Prefijo inválido: $PREFIX" >&2
+    exit 2
+fi
+if [[ ! "$PARENT" =~ ^[a-z0-9]([a-z0-9.\-]*[a-z0-9])?$ ]]; then
+    echo "Dominio padre inválido: $PARENT" >&2
+    exit 2
+fi
+
+FQDN="${PREFIX}.${PARENT}"
+
+# Idempotente: si ya existe, plesk falla con código != 0; lo aceptamos.
+if plesk bin subdomain --info "$FQDN" >/dev/null 2>&1; then
+    echo "$FQDN"
+    exit 0
+fi
+
+plesk bin subdomain --create "$PREFIX" -domain "$PARENT" >/dev/null
+
+# Verifica creación.
+if plesk bin subdomain --info "$FQDN" >/dev/null 2>&1; then
+    echo "$FQDN"
+    exit 0
+fi
+
+echo "subdomain-create: no se pudo crear $FQDN" >&2
+exit 1

@@ -1,10 +1,41 @@
 <?php /** @var Zend_View $this */ ?>
 <link rel="stylesheet" href="<?= pm_Context::getBaseUrl() ?>css/extension.css">
 
+<p class="ec-back">
+    <a href="<?= pm_Context::getBaseUrl() ?>index.php/index/index">
+        ← <?= $this->escape($this->lmsg('btnBack')) ?>
+    </a>
+</p>
+
 <h2><?= $this->escape($this->lmsg('bindingsTitle')) ?></h2>
 
 <section class="ec-card">
-    <h3><?= $this->escape($this->lmsg('bindNewTitle')) ?></h3>
+    <h3><?= $this->escape($this->lmsg('createSubdomainTitle')) ?></h3>
+    <p class="ec-hint"><?= $this->escape($this->lmsg('createSubdomainHelp')) ?></p>
+    <form method="post" action="<?= pm_Context::getBaseUrl() ?>index.php/index/domains">
+        <input type="hidden" name="do" value="subdomain">
+        <label>
+            <?= $this->escape($this->lmsg('lblSubdomainPrefix')) ?>
+            <input type="text" name="prefix" value="chat" pattern="^[a-z0-9]([a-z0-9\-]*[a-z0-9])?$" required>
+        </label>
+        <label>
+            <?= $this->escape($this->lmsg('lblParentDomain')) ?>
+            <select name="parent" required>
+                <option value=""></option>
+                <?php foreach ($this->domains as $d): ?>
+                    <option value="<?= $this->escape($d) ?>"><?= $this->escape($d) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <button class="btn btn-primary" type="submit">
+            <?= $this->escape($this->lmsg('btnCreateAndBind')) ?>
+        </button>
+    </form>
+</section>
+
+<section class="ec-card">
+    <h3><?= $this->escape($this->lmsg('bindExistingTitle')) ?></h3>
+    <p class="ec-hint"><?= $this->escape($this->lmsg('bindExistingHelp')) ?></p>
     <form method="post" action="<?= pm_Context::getBaseUrl() ?>index.php/index/domains">
         <input type="hidden" name="do" value="bind">
         <label>
@@ -18,9 +49,9 @@
         </label>
         <label>
             <?= $this->escape($this->lmsg('lblLocation')) ?>
-            <input type="text" name="location" value="/" pattern="^/[a-zA-Z0-9_\-/]*$">
+            <input type="text" name="location" value="/chat/" pattern="^/[a-zA-Z0-9_\-/]*$">
         </label>
-        <button class="btn btn-primary" type="submit">
+        <button class="btn" type="submit">
             <?= $this->escape($this->lmsg('btnBind')) ?>
         </button>
     </form>
@@ -36,7 +67,7 @@
             <tbody>
             <?php foreach ($this->bindings as $d): ?>
                 <tr>
-                    <td><a href="https://<?= $this->escape($d) ?>/" target="_blank"><?= $this->escape($d) ?></a></td>
+                    <td><a href="https://<?= $this->escape($d) ?>/" target="_blank" rel="noopener"><?= $this->escape($d) ?></a></td>
                     <td>
                         <form method="post" action="<?= pm_Context::getBaseUrl() ?>index.php/index/domains"
                               onsubmit="return confirm('<?= $this->escape($this->lmsg('confirmUnbind')) ?>');">

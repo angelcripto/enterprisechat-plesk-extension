@@ -4,7 +4,7 @@
     <name>EnterpriseChat</name>
     <description>Chat empresarial open source autoalojado: instala el servidor .NET 8 + SignalR + SQLite como servicio gestionado desde Plesk, con dominio, reverse proxy nginx con WebSocket, backup integrado y activación de la edición Pro mediante clave de licencia.</description>
     <version>0.1.0</version>
-    <release>12</release>
+    <release>13</release>
     <vendor>EnterpriseChat</vendor>
     <url>https://enterprisechat.es</url>
     <plesk_min_version>18.0.50</plesk_min_version>
