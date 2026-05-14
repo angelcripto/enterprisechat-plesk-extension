@@ -1,5 +1,9 @@
 <?php
-return [
+// Plesk SDK acepta los dos contratos:
+//   - file_get_contents + eval con $messages en alcance global
+//   - include con return de array
+// Por eso asignamos a $messages y lo retornamos a la vez.
+$messages = [
     // Cabecera y tabs
     'pageTitle'             => 'EnterpriseChat',
     'tabStatus'             => 'Estado',

@@ -2,59 +2,9 @@
 <module>
     <id>enterprisechat</id>
     <name>EnterpriseChat</name>
-    <description><![CDATA[
-<h3>Chat empresarial autoalojado, sin nubes ni licencias por usuario</h3>
-
-<p>EnterpriseChat es un sistema de mensajería corporativa para empresas
-con varios despachos: tu servidor, tu base de datos, tu infraestructura.
-Ni nube de terceros, ni APIs externas por las que circulen las
-conversaciones internas. La extensión convierte cualquier servidor
-administrado con Plesk en el host del chat de tu organización.</p>
-
-<p>El panel se encarga del ciclo de vida completo: instalación del
-paquete, generación automática de la clave JWT y de la contraseña inicial
-de administrador, configuración del reverse proxy nginx con soporte
-WebSocket para SignalR, activación de la edición Pro mediante clave de
-licencia e integración con los backups de Plesk.</p>
-
-<h3>Prestaciones de la versión gratuita</h3>
-<ul>
-  <li>Mensajería 1:1 y salas de grupo.</li>
-  <li>Compartición de archivos y avatares.</li>
-  <li>Historial completo en SQLite local con búsqueda.</li>
-  <li>Cliente de escritorio Windows nativo (WPF), distribuido aparte como MSI.</li>
-  <li>TLS extremo a extremo a través del dominio Plesk que enlaces.</li>
-  <li>Hasta 10 usuarios concurrentes.</li>
-</ul>
-
-<h3>Prestaciones de la versión Pro</h3>
-<ul>
-  <li>Usuarios concurrentes ilimitados.</li>
-  <li>Auto-update gestionado del servidor.</li>
-  <li>Administración remota desde el propio panel Plesk.</li>
-  <li>Soporte profesional por email.</li>
-  <li>Actualizaciones de seguridad prioritarias.</li>
-</ul>
-
-<h3>Cómo funciona</h3>
-<ol>
-  <li>Instala la extensión desde el panel.</li>
-  <li>Plesk genera automáticamente la clave JWT y la contraseña inicial del administrador, mostrándola una sola vez.</li>
-  <li>Enlaza el chat a un dominio o subdominio Plesk; el reverse proxy nginx queda configurado con soporte WebSocket.</li>
-  <li>Reparte el cliente Windows (MSI) entre tus empleados — se conectan al dominio que has configurado y reconectan automáticamente.</li>
-</ol>
-
-<h3>Sistemas operativos compatibles</h3>
-<ul>
-  <li>Ubuntu 20.04, 22.04 y 24.04</li>
-  <li>Debian 11 y 12</li>
-  <li>AlmaLinux 8 y 9</li>
-  <li>RockyLinux 8 y 9</li>
-  <li>CloudLinux 8 y 9</li>
-</ul>
-]]></description>
+    <description>Chat empresarial open source autoalojado: instala el servidor .NET 8 + SignalR + SQLite como servicio gestionado desde Plesk, con dominio, reverse proxy nginx con WebSocket, backup integrado y activación de la edición Pro mediante clave de licencia.</description>
     <version>0.1.0</version>
-    <release>9</release>
+    <release>10</release>
     <vendor>EnterpriseChat</vendor>
     <url>https://enterprisechat.es</url>
     <plesk_min_version>18.0.50</plesk_min_version>
@@ -68,5 +18,4 @@ licencia e integración con los backups de Plesk.</p>
             <distribution>CloudLinux</distribution>
         </os>
     </required>
-    <icon>icon.png</icon>
 </module>

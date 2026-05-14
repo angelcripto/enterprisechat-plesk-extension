@@ -1,59 +1,27 @@
 <?php
 /**
- * Disparador desde código PHP (controllers UI) para los wrappers que
- * residen en plib/sbin/. pm_ApiCli::callSbin no resuelve sbin propios de
- * la extensión en Obsidian, así que hacemos passthru con ruta absoluta.
+ * Disparador desde código PHP para los wrappers en /sbin/ del zip (que
+ * Plesk despliega en /usr/local/psa/admin/bin/modules/<id>/).
  *
- * Si Plesk demota el proceso PHP a `psaadm`, los wrappers fallarán al
- * intentar systemctl / apt-get. El controller debe interpretar el código
- * de salida no-cero y mostrar el comando manual al admin.
+ * Importante: según la doc de Plesk, pm_ApiCli::callSbin SOLO se puede
+ * usar desde scripts (plib/scripts/*.php), NO desde controllers UI. Por
+ * eso esta clase solo se utiliza en CLI; los controllers UI mantienen
+ * lecturas vía exec() directo (systemctl is-active, etc.).
  */
 class Modules_Enterprisechat_Installer
 {
-    public static function sbinDir(): string
-    {
-        return pm_Context::getPlibDir() . '/sbin';
-    }
-
     public static function runPostInstall(): array
     {
-        return self::run(self::sbinDir() . '/install', []);
+        return pm_ApiCli::callSbin('install', [], pm_ApiCli::RESULT_FULL);
     }
 
     public static function runPreUninstall(bool $purgeData = false): array
     {
         $keep = $purgeData ? '0' : '1';
-        return self::run(self::sbinDir() . '/uninstall', ['--keep-data=' . $keep]);
-    }
-
-    public static function isRoot(): bool
-    {
-        if (function_exists('posix_geteuid')) {
-            return posix_geteuid() === 0;
-        }
-        return (int)trim((string)shell_exec('id -u')) === 0;
-    }
-
-    private static function run(string $script, array $args): array
-    {
-        if (!is_file($script)) {
-            throw new pm_Exception("Wrapper sbin no encontrado: $script");
-        }
-
-        $cmd = 'bash ' . escapeshellarg($script);
-        foreach ($args as $a) {
-            $cmd .= ' ' . escapeshellarg((string)$a);
-        }
-        $cmd .= ' 2>&1';
-
-        $out = [];
-        $code = 0;
-        exec($cmd, $out, $code);
-
-        return [
-            'ok'   => $code === 0,
-            'code' => $code,
-            'out'  => implode("\n", $out),
-        ];
+        return pm_ApiCli::callSbin(
+            'uninstall',
+            ['--keep-data=' . $keep],
+            pm_ApiCli::RESULT_FULL
+        );
     }
 }

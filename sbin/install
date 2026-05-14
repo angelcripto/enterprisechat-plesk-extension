@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
-# sbin wrapper invocado vía pm_ApiCli::callSbin('install') desde
-# plib/scripts/post-install.php. Plesk lo despliega en
-# /usr/local/psa/admin/sbin/modules/enterprisechat/install con setuid root,
-# por lo que aquí ya tenemos privilegios para apt-get / systemctl.
+# Wrapper invocado vía pm_ApiCli::callSbin('install') desde
+# plib/scripts/post-install.php. Plesk despliega los archivos de
+# /sbin/ del zip en /usr/local/psa/admin/bin/modules/enterprisechat/
+# con privilegios elevados, por lo que aquí ya tenemos lo necesario
+# para apt-get / systemctl.
 #
 # Acciones:
 #   1. Localiza el .deb en plib/payload/.

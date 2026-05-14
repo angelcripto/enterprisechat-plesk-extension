@@ -80,20 +80,34 @@ echo "==> dpkg-deb --build"
 dpkg-deb --build --root-owner-group "$PKG" "$DEB"
 
 # --- 3. Extension zip ------------------------------------------------------
+# Estructura raíz aceptada por Plesk (lo demás se descarta en deploy):
+#   meta.xml         manifest
+#   DESCRIPTION.md   descripción markdown extendida (Catalog)
+#   CHANGES.md       changelog markdown (opcional)
+#   _meta/           iconos y screenshots
+#   sbin/            scripts privilegiados (deploy a /admin/bin/modules/<id>/)
+#   htdocs/          assets web públicos
+#   plib/            código PHP (controllers, library, views, scripts,
+#                    resources/locales, etc.) — se aplana en /admin/plib/modules/<id>/
+#   var/             datos de runtime
 echo "==> Staging extension zip"
-cp -r "$EXT_DIR/meta.xml" "$EXT_DIR/plib" "$EXT_STAGE/"
-[[ -d "$EXT_DIR/htdocs" ]] && cp -r "$EXT_DIR/htdocs" "$EXT_STAGE/"
+cp "$EXT_DIR/meta.xml" "$EXT_STAGE/"
+[[ -f "$EXT_DIR/DESCRIPTION.md" ]] && cp "$EXT_DIR/DESCRIPTION.md" "$EXT_STAGE/"
+[[ -f "$EXT_DIR/CHANGES.md" ]]     && cp "$EXT_DIR/CHANGES.md"     "$EXT_STAGE/"
+[[ -d "$EXT_DIR/_meta" ]]          && cp -r "$EXT_DIR/_meta" "$EXT_STAGE/"
+[[ -d "$EXT_DIR/sbin" ]]           && cp -r "$EXT_DIR/sbin"  "$EXT_STAGE/"
+[[ -d "$EXT_DIR/htdocs" ]]         && cp -r "$EXT_DIR/htdocs" "$EXT_STAGE/"
+cp -r "$EXT_DIR/plib" "$EXT_STAGE/"
 
-# El .deb debe vivir dentro de plib/ para que Plesk lo despliegue
-# (cualquier carpeta fuera de plib/ o htdocs/ se descarta en el deploy).
+# El .deb va dentro de plib/payload/ (plib/ deploya a /admin/plib/modules/<id>/
+# y desde allí el wrapper sbin lo localiza).
 mkdir -p "$EXT_STAGE/plib/payload"
 cp "$DEB" "$EXT_STAGE/plib/payload/"
 
-# Asegura que los sbin wrappers van marcados como ejecutables (Plesk los
-# despliega setuid root pero respeta el bit de ejecución del archivo de
-# origen). chmod aquí sí se aplica porque $EXT_STAGE está en ext4 (/tmp).
-if [[ -d "$EXT_STAGE/plib/sbin" ]]; then
-    chmod 0755 "$EXT_STAGE/plib/sbin"/*
+# Bit ejecutable en los wrappers privilegiados. El staging está en ext4
+# (/tmp), por lo que chmod aquí sí se aplica.
+if [[ -d "$EXT_STAGE/sbin" ]]; then
+    chmod 0755 "$EXT_STAGE/sbin"/*
 fi
 
 ZIP="$STAGE/enterprisechat-plesk-${VERSION}.zip"

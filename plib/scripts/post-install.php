@@ -1,43 +1,22 @@
 <?php
 /**
- * Plesk SDK hook: ejecutado por el panel tras desplegar el zip.
+ * Plesk SDK hook: ejecutado en contexto CLI tras desplegar la extensión.
  *
- * Plesk Obsidian puede ejecutar este script como root (instalación CLI
- * disparada desde SSH como root) o como `psaadm` (instalación desde la
- * UI del panel). Para el segundo caso no podemos llamar apt-get ni
- * systemctl: solo mostramos al admin el comando exacto a ejecutar por
- * SSH y devolvemos 0 para que la extensión quede registrada y se pueda
- * finalizar a mano.
+ * Según la documentación oficial de Plesk Obsidian
+ * (https://docs.plesk.com/.../commandline-interface.71088/), los scripts
+ * colocados en /sbin/ del zip se despliegan en
+ *   /usr/local/psa/admin/bin/modules/<id>/
+ * con privilegios elevados, y se invocan desde scripts CLI (como este)
+ * vía pm_ApiCli::callSbin('<name>').
  */
 
-$sbinDir = realpath(__DIR__ . '/../sbin');
-if ($sbinDir === false) {
-    fwrite(STDERR, "post-install: sbin directory missing\n");
-    exit(1);
+$result = pm_ApiCli::callSbin('install', [], pm_ApiCli::RESULT_FULL);
+
+if (!empty($result['stdout'])) {
+    fwrite(STDOUT, $result['stdout']);
 }
-$installScript = $sbinDir . '/install';
-
-@chmod($installScript, 0755);
-@chmod($sbinDir . '/uninstall', 0755);
-@chmod($sbinDir . '/systemctl-wrap', 0755);
-
-$uid = function_exists('posix_geteuid') ? posix_geteuid() : (int)trim((string)shell_exec('id -u'));
-
-if ($uid !== 0) {
-    fwrite(STDOUT,
-        "EnterpriseChat se ha cargado en Plesk, pero el panel ejecutó este\n" .
-        "hook como un usuario sin privilegios (UID $uid). Para terminar la\n" .
-        "instalación (apt-get del paquete .deb, secretos y arranque del\n" .
-        "servicio), conéctate al VPS por SSH como root y ejecuta:\n" .
-        "\n" .
-        "    sudo bash $installScript\n" .
-        "\n" .
-        "Después, refresca la página de la extensión en el panel para que\n" .
-        "aparezca el botón 'Abrir' y la contraseña inicial.\n"
-    );
-    exit(0);
+if (!empty($result['stderr'])) {
+    fwrite(STDERR, $result['stderr']);
 }
 
-// Somos root: ejecutamos directamente el wrapper.
-passthru('bash ' . escapeshellarg($installScript) . ' 2>&1', $code);
-exit((int)$code);
+exit((int)($result['code'] ?? 1));
