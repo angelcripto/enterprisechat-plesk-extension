@@ -67,22 +67,26 @@ class Modules_Enterprisechat_EnterpriseChatService
 
     // ----- internos ----------------------------------------------------
 
+    /**
+     * Invoca el wrapper privilegiado /sbin/systemctl-wrap que Plesk despliega
+     * en /usr/local/psa/admin/bin/modules/enterprisechat/systemctl-wrap.
+     *
+     * Usamos pm_ApiCli::callSbin (no exec): el panel PHP suele tener exec()
+     * deshabilitado, y los warnings mezclados rompen el JSON de las acciones
+     * AJAX (start/stop/restart). callSbin además pasa por el bridge de
+     * privilegios de Plesk, así que el systemctl write se ejecuta como root
+     * en lugar de fallar como psaadm.
+     */
     private static function run(array $argv): array
     {
-        $cmd = 'systemctl';
-        foreach ($argv as $a) {
-            $cmd .= ' ' . escapeshellarg((string)$a);
-        }
-        $cmd .= ' 2>&1';
-
-        $out = [];
-        $code = 0;
-        exec($cmd, $out, $code);
-
+        $r = pm_ApiCli::callSbin('systemctl-wrap', $argv, pm_ApiCli::RESULT_FULL);
+        $code = (int)($r['code'] ?? 1);
+        $out  = (string)($r['stdout'] ?? '');
+        $err  = (string)($r['stderr'] ?? '');
         return [
             'ok'   => $code === 0,
             'code' => $code,
-            'out'  => implode("\n", $out),
+            'out'  => $out !== '' ? $out : $err,
         ];
     }
 
