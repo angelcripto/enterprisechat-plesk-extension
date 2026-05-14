@@ -23,7 +23,10 @@ class Modules_Enterprisechat_CustomButtons extends pm_Hook_CustomButtons
         return [
             [
                 'place'       => self::PLACE_ADMIN_NAVIGATION,
-                'section'     => 'hosting',
+                // SECTION_NAV_HOSTING ('hosting') es el grupo "Hosting" de la
+                // sidebar — el mismo en el que viven WordPress Toolkit, Git,
+                // Node.js Toolkit, etc.
+                'section'     => self::SECTION_NAV_HOSTING,
                 'order'       => 50,
                 'title'       => $title,
                 'description' => $desc,
@@ -32,7 +35,11 @@ class Modules_Enterprisechat_CustomButtons extends pm_Hook_CustomButtons
             ],
             [
                 'place'       => self::PLACE_ADMIN_TOOLS_AND_SETTINGS,
-                'section'     => 'toolsButtons',
+                // SECTION_ADMIN_TOOLS_ADDITIONAL_SERVICES ('customButtons').
+                // Antes usaba 'toolsButtons' que es una sección de RESELLER,
+                // no de ADMIN — por eso no aparecía en Herramientas y
+                // configuración del administrador.
+                'section'     => self::SECTION_ADMIN_TOOLS_ADDITIONAL_SERVICES,
                 'order'       => 50,
                 'title'       => $title,
                 'description' => 'Configurar el servidor de chat empresarial',
