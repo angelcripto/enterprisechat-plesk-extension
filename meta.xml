@@ -2,9 +2,25 @@
 <module>
     <id>enterprisechat</id>
     <name>EnterpriseChat</name>
-    <description>Chat empresarial open source autoalojado. Servidor .NET 8 + SignalR + SQLite, gestionado desde Plesk: instalar, configurar dominio, reverse proxy con WebSocket y backup integrado.</description>
+    <description><![CDATA[
+Chat empresarial autoalojado y open source para pymes con varios despachos.
+Servidor escrito en C# / .NET 8 con ASP.NET Core, SignalR y SQLite. La
+extensión se encarga de:
+
+· Instalar el servidor como servicio systemd (enterprisechat.service).
+· Generar automáticamente la clave JWT y la contraseña inicial del
+  administrador, y mostrarla una sola vez en el panel.
+· Configurar el reverse proxy nginx del dominio o subdominio que elijas,
+  con soporte completo de WebSocket para SignalR.
+· Activar la edición Pro mediante clave de licencia.
+· Integrarse con el sistema de backup de Plesk (base de datos SQLite,
+  adjuntos y configuración).
+
+El cliente de escritorio (Windows, WPF) se distribuye aparte como MSI y
+se conecta al servidor por HTTPS / WSS al dominio que configures aquí.
+    ]]></description>
     <version>0.1.0</version>
-    <release>1</release>
+    <release>2</release>
     <vendor>EnterpriseChat</vendor>
     <url>https://enterprisechat.es</url>
     <plesk_min_version>18.0.50</plesk_min_version>
@@ -19,5 +35,5 @@
         </os>
     </required>
     <icon>htdocs/images/icon.png</icon>
-    <category>Communication</category>
+    <category>Server Tools</category>
 </module>
