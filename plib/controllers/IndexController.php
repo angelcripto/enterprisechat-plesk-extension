@@ -36,11 +36,12 @@ class IndexController extends pm_Controller_Action
         $this->view->bindings      = Modules_Enterprisechat_NginxConfig::listBindings();
 
         // Si el servicio sigue inactive y /opt/enterprisechat no existe, es que
-        // Plesk demoto post-install.php a psaadm y el .deb nunca llego a apt-get.
-        // Mostramos al admin el comando manual para terminar la instalacion.
+        // callSbin('install') falló durante post-install.php y el .deb nunca
+        // llegó a apt-get. Mostramos al admin el comando manual para terminar.
+        // Plesk despliega /sbin/* del zip a /admin/bin/modules/<id>/.
         $deployed = is_dir('/opt/enterprisechat');
         $this->view->installPending = !$this->view->serviceStatus['active'] && !$deployed;
-        $this->view->installScript  = Modules_Enterprisechat_Installer::sbinDir() . '/install';
+        $this->view->installScript  = '/usr/local/psa/admin/bin/modules/enterprisechat/install';
     }
 
     public function domainsAction()
