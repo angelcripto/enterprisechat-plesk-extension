@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+#
+# Wrapper privilegiado que gestiona el snippet Apache de reverse proxy
+# del subdominio elegido hacia el servidor EnterpriseChat local
+# (127.0.0.1:5080), con soporte WebSocket (mod_proxy_wstunnel) para SignalR.
+#
+# Plesk Obsidian: el archivo
+#   /var/www/vhosts/system/<DOMAIN>/conf/{vhost.conf,vhost_ssl.conf}
+# se incluye DENTRO del <VirtualHost> generado por la plantilla del panel,
+# por lo que las directivas que escribimos toman efecto en el vhost del
+# dominio sin tener que tocar la config global de Apache.
+#
+# Acciones:
+#   write <domain> <base64-content>   sobrescribe vhost.conf y vhost_ssl.conf
+#   rm    <domain>                    elimina ambos snippets gestionados
+#   list                              FQDNs gestionados por la extensión
+#
+# Seguridad:
+#   - Solo se opera sobre vhost.conf / vhost_ssl.conf del propio dominio.
+#   - <DOMAIN> debe ser un FQDN válido (sin path traversal).
+#   - Si ya existe un vhost*.conf y NO contiene el marker EnterpriseChat
+#     no lo pisamos: se respeta la configuración manual del admin.
+#   - Tras escribir comprobamos `apachectl -t`; si falla, restauramos el
+#     backup y devolvemos exit no-cero para que la UI muestre el motivo.
+#
+set -euo pipefail
+
+VHOSTS_ROOT=/var/www/vhosts/system
+MARK='# Managed by Plesk extension EnterpriseChat — do not edit by hand.'
+
+ACTION="${1:-}"
+if [[ -z "$ACTION" ]]; then
+    echo "uso: apache-snippet (write|rm|list) [<domain>] [<base64-content>]" >&2
+    exit 2
+fi
+
+# --- list ---------------------------------------------------------------
+if [[ "$ACTION" == "list" ]]; then
+    shopt -s nullglob
+    for f in "$VHOSTS_ROOT"/*/conf/vhost_ssl.conf "$VHOSTS_ROOT"/*/conf/vhost.conf; do
+        if head -n1 "$f" 2>/dev/null | grep -qF "$MARK"; then
+            dom="${f#$VHOSTS_ROOT/}"
+            dom="${dom%%/*}"
+            echo "$dom"
+        fi
+    done | sort -u
+    exit 0
+fi
+
+DOMAIN="${2:-}"
+if [[ -z "$DOMAIN" ]]; then
+    echo "apache-snippet: falta dominio para acción '$ACTION'" >&2
+    exit 2
+fi
+if [[ ! "$DOMAIN" =~ ^[a-z0-9]([a-z0-9.\-]*[a-z0-9])?$ ]]; then
+    echo "apache-snippet: dominio inválido: $DOMAIN" >&2
+    exit 2
+fi
+
+CONF_DIR="$VHOSTS_ROOT/$DOMAIN/conf"
+
+# --- guards de pre-existencia -------------------------------------------
+not_ours_or_empty() {
+    local f="$1"
+    [[ ! -f "$f" ]] && return 0
+    [[ ! -s "$f" ]] && return 0
+    head -n1 "$f" | grep -qF "$MARK"
+}
+
+reload_apache() {
+    if apachectl -t 2>/dev/null; then
+        systemctl reload apache2 2>/dev/null || systemctl reload httpd 2>/dev/null || true
+        return 0
+    fi
+    return 1
+}
+
+# --- write --------------------------------------------------------------
+if [[ "$ACTION" == "write" ]]; then
+    if [[ ! -d "$CONF_DIR" ]]; then
+        echo "apache-snippet: $CONF_DIR no existe (¿se ha creado el dominio en Plesk?)" >&2
+        exit 1
+    fi
+
+    # Pre-check: módulos Apache obligatorios.
+    for mod in proxy proxy_http proxy_wstunnel rewrite headers; do
+        if ! a2query -m "$mod" >/dev/null 2>&1; then
+            echo "apache-snippet: falta el módulo Apache '$mod' (habilítalo con 'a2enmod $mod && systemctl reload apache2')" >&2
+            exit 1
+        fi
+    done
+
+    CONTENT_B64="${3:-}"
+    if [[ -z "$CONTENT_B64" ]]; then
+        echo "apache-snippet write: falta contenido base64" >&2
+        exit 2
+    fi
+
+    # Refuse to overwrite manual configuration.
+    for f in "$CONF_DIR/vhost.conf" "$CONF_DIR/vhost_ssl.conf"; do
+        if ! not_ours_or_empty "$f"; then
+            echo "apache-snippet: $f ya existe y no fue creado por la extensión; abortando para no pisar configuración manual." >&2
+            exit 1
+        fi
+    done
+
+    # Backup + write.
+    for f in "$CONF_DIR/vhost.conf" "$CONF_DIR/vhost_ssl.conf"; do
+        [[ -f "$f" ]] && cp -f "$f" "${f}.ec.bak"
+        printf '%s' "$CONTENT_B64" | base64 -d > "$f"
+        chmod 0644 "$f"
+    done
+
+    # Pedir a Plesk que regenere el vhost incluyendo el nuevo snippet.
+    if command -v plesk >/dev/null 2>&1; then
+        if ! plesk sbin httpdmng --reconfigure-domain "$DOMAIN" >/dev/null 2>&1; then
+            # Rollback si falla la reconfiguración.
+            for f in "$CONF_DIR/vhost.conf" "$CONF_DIR/vhost_ssl.conf"; do
+                if [[ -f "${f}.ec.bak" ]]; then
+                    mv -f "${f}.ec.bak" "$f"
+                else
+                    rm -f "$f"
+                fi
+            done
+            plesk sbin httpdmng --reconfigure-domain "$DOMAIN" >/dev/null 2>&1 || true
+            echo "apache-snippet: reconfigure-domain falló; configuración revertida." >&2
+            exit 1
+        fi
+    fi
+
+    # apachectl -t como segunda red de seguridad.
+    if ! reload_apache; then
+        for f in "$CONF_DIR/vhost.conf" "$CONF_DIR/vhost_ssl.conf"; do
+            if [[ -f "${f}.ec.bak" ]]; then
+                mv -f "${f}.ec.bak" "$f"
+            else
+                rm -f "$f"
+            fi
+        done
+        plesk sbin httpdmng --reconfigure-domain "$DOMAIN" >/dev/null 2>&1 || true
+        systemctl reload apache2 2>/dev/null || true
+        echo "apache-snippet: apachectl -t falló tras escribir; configuración revertida." >&2
+        apachectl -t 2>&1 | head -5 >&2 || true
+        exit 1
+    fi
+
+    # Éxito: borra backups.
+    rm -f "$CONF_DIR/vhost.conf.ec.bak" "$CONF_DIR/vhost_ssl.conf.ec.bak"
+    exit 0
+fi
+
+# --- rm -----------------------------------------------------------------
+if [[ "$ACTION" == "rm" ]]; then
+    for f in "$CONF_DIR/vhost.conf" "$CONF_DIR/vhost_ssl.conf"; do
+        if [[ -f "$f" ]] && head -n1 "$f" | grep -qF "$MARK"; then
+            rm -f "$f"
+        fi
+    done
+    if command -v plesk >/dev/null 2>&1; then
+        plesk sbin httpdmng --reconfigure-domain "$DOMAIN" >/dev/null 2>&1 || true
+    fi
+    systemctl reload apache2 2>/dev/null || true
+    exit 0
+fi
+
+echo "apache-snippet: acción desconocida '$ACTION' (write|rm|list)" >&2
+exit 2

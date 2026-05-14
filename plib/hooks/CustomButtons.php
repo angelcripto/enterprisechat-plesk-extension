@@ -21,11 +21,9 @@ class Modules_Enterprisechat_CustomButtons extends pm_Hook_CustomButtons
         $desc  = 'Chat empresarial autoalojado';
 
         return [
+            // Service Provider View (vista avanzada / dev).
             [
                 'place'       => self::PLACE_ADMIN_NAVIGATION,
-                // SECTION_NAV_HOSTING ('hosting') es el grupo "Hosting" de la
-                // sidebar — el mismo en el que viven WordPress Toolkit, Git,
-                // Node.js Toolkit, etc.
                 'section'     => self::SECTION_NAV_HOSTING,
                 'order'       => 50,
                 'title'       => $title,
@@ -35,10 +33,6 @@ class Modules_Enterprisechat_CustomButtons extends pm_Hook_CustomButtons
             ],
             [
                 'place'       => self::PLACE_ADMIN_TOOLS_AND_SETTINGS,
-                // SECTION_ADMIN_TOOLS_ADDITIONAL_SERVICES ('customButtons').
-                // Antes usaba 'toolsButtons' que es una sección de RESELLER,
-                // no de ADMIN — por eso no aparecía en Herramientas y
-                // configuración del administrador.
                 'section'     => self::SECTION_ADMIN_TOOLS_ADDITIONAL_SERVICES,
                 'order'       => 50,
                 'title'       => $title,
@@ -48,6 +42,24 @@ class Modules_Enterprisechat_CustomButtons extends pm_Hook_CustomButtons
             ],
             [
                 'place'       => self::PLACE_ADMIN_HOME,
+                'title'       => $title,
+                'description' => $desc,
+                'icon'        => $icon,
+                'link'        => $link,
+            ],
+            // Power User View — la vista por defecto del admin en Plesk
+            // Obsidian standalone. PLACE_ADMIN_NAVIGATION solo aparece en
+            // Service Provider View, así que añadimos los placements del
+            // panel-de-hosting para no quedar invisibles aquí.
+            [
+                'place'       => self::PLACE_HOSTING_PANEL_NAVIGATION,
+                'title'       => $title,
+                'description' => $desc,
+                'icon'        => $icon,
+                'link'        => $link,
+            ],
+            [
+                'place'       => self::PLACE_HOSTING_PANEL_TABS,
                 'title'       => $title,
                 'description' => $desc,
                 'icon'        => $icon,

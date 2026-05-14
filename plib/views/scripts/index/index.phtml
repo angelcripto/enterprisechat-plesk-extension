@@ -80,13 +80,25 @@
     </section>
 
     <section class="ec-card">
-        <h3><?= $this->escape($this->lmsg('accessTitle')) ?></h3>
-        <p class="ec-hint">
-            <?= $this->escape($this->lmsg('accessHelp')) ?>
-        </p>
-        <p class="ec-secret"><?= $this->escape($this->lmsg('accessUrlHint')) ?> http://&lt;host&gt;:5080</p>
-        <p class="ec-hint">
-            <?= $this->escape($this->lmsg('accessFirewallHint')) ?>
+        <h3><?= $this->escape($this->lmsg('bindingsTitle')) ?></h3>
+        <?php if (empty($this->bindings)): ?>
+            <p class="ec-muted"><?= $this->escape($this->lmsg('bindingsEmpty')) ?></p>
+            <p class="ec-hint"><?= $this->escape($this->lmsg('accessHelp')) ?></p>
+        <?php else: ?>
+            <ul class="ec-list">
+                <?php foreach ($this->bindings as $d): ?>
+                    <li>
+                        <a href="https://<?= $this->escape($d) ?>/" target="_blank" rel="noopener">
+                            <?= $this->escape($d) ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        <p>
+            <a class="btn btn-primary" href="<?= pm_Context::getActionUrl('index', 'domains') ?>">
+                <?= $this->escape($this->lmsg('btnManageDomains')) ?>
+            </a>
         </p>
     </section>
 </div>
