@@ -7,6 +7,12 @@
 #
 # Uso:  ./build.sh [version]
 #
+# Detalle: si EXT_DIR está en un mount NTFS (WSL /mnt/c/...) el FS no
+# preserva permisos Unix y dpkg-deb rechaza el control dir como 0777. Para
+# evitarlo, todo el staging va en un directorio temporal en ext4 (TMPDIR /
+# /tmp) y solo los artefactos finales (.deb y .zip) se copian al build/
+# dentro del repo.
+#
 set -euo pipefail
 
 VERSION="${1:-0.1.0}"
@@ -23,16 +29,20 @@ if [[ -z "$SERVER_REPO" || ! -d "$SERVER_REPO/src/EnterpriseChat.Server" ]]; the
     exit 1
 fi
 
-BUILD="$EXT_DIR/build"
-PUBLISH="$BUILD/publish"
-PKG="$BUILD/pkg"
-EXT_STAGE="$BUILD/ext"
+OUT_DIR="$EXT_DIR/build"
+STAGE="$(mktemp -d -t enterprisechat-plesk-XXXXXX)"
+trap 'rm -rf "$STAGE"' EXIT
 
-rm -rf "$BUILD"
+PUBLISH="$STAGE/publish"
+PKG="$STAGE/pkg"
+EXT_STAGE="$STAGE/ext"
+
 mkdir -p "$PUBLISH" "$PKG/DEBIAN" "$PKG/opt/enterprisechat" "$PKG/etc/systemd/system" "$EXT_STAGE/payload"
+rm -rf "$OUT_DIR"
+mkdir -p "$OUT_DIR"
 
 # --- 1. Publish .NET self-contained ----------------------------------------
-echo "==> dotnet publish (linux-x64, self-contained)"
+echo "==> dotnet publish (linux-x64, self-contained) -> $PUBLISH"
 dotnet publish "$SERVER_REPO/src/EnterpriseChat.Server/EnterpriseChat.Server.csproj" \
     -c Release -r linux-x64 --self-contained true \
     -p:PublishSingleFile=true -p:PublishTrimmed=false \
@@ -58,9 +68,14 @@ EOF
 
 cp "$EXT_DIR/debian/postinst" "$PKG/DEBIAN/postinst"
 cp "$EXT_DIR/debian/prerm"    "$PKG/DEBIAN/prerm"
-chmod 0755 "$PKG/DEBIAN/postinst" "$PKG/DEBIAN/prerm"
 
-DEB="$BUILD/enterprisechat_${VERSION}_amd64.deb"
+# El STAGE está en ext4 (mktemp -> $TMPDIR / /tmp), por lo que chmod aquí
+# sí se aplica. dpkg-deb exige el control dir en 0755..0775.
+chmod 0755 "$PKG" "$PKG/DEBIAN"
+chmod 0755 "$PKG/DEBIAN/postinst" "$PKG/DEBIAN/prerm"
+chmod 0644 "$PKG/DEBIAN/control"
+
+DEB="$STAGE/enterprisechat_${VERSION}_amd64.deb"
 echo "==> dpkg-deb --build"
 dpkg-deb --build --root-owner-group "$PKG" "$DEB"
 
@@ -70,10 +85,14 @@ cp -r "$EXT_DIR/meta.xml" "$EXT_DIR/plib" "$EXT_DIR/hooks" "$EXT_STAGE/"
 [[ -d "$EXT_DIR/htdocs" ]] && cp -r "$EXT_DIR/htdocs" "$EXT_STAGE/"
 cp "$DEB" "$EXT_STAGE/payload/"
 
-ZIP="$BUILD/enterprisechat-plesk-${VERSION}.zip"
+ZIP="$STAGE/enterprisechat-plesk-${VERSION}.zip"
 ( cd "$EXT_STAGE" && zip -rq "$ZIP" . )
+
+# --- 4. Publicar artefactos a build/ ---------------------------------------
+cp "$DEB" "$OUT_DIR/"
+cp "$ZIP" "$OUT_DIR/"
 
 echo
 echo "Done."
-echo "  .deb : $DEB"
-echo "  zip  : $ZIP"
+echo "  .deb : $OUT_DIR/$(basename "$DEB")"
+echo "  zip  : $OUT_DIR/$(basename "$ZIP")"
