@@ -3,6 +3,15 @@
 
 <h2><?= $this->escape($this->lmsg('pageTitle')) ?></h2>
 
+<?php if (!empty($this->installPending)): ?>
+<div class="msg-box msg-warning">
+    <h4><?= $this->escape($this->lmsg('installPendingTitle')) ?></h4>
+    <p><?= $this->escape($this->lmsg('installPendingHelp')) ?></p>
+    <pre class="ec-secret">sudo bash <?= $this->escape($this->installScript) ?></pre>
+    <p class="ec-hint"><?= $this->escape($this->lmsg('installPendingAfter')) ?></p>
+</div>
+<?php endif; ?>
+
 <?php if ($this->firstPassword): ?>
 <div class="msg-box msg-warning">
     <h4><?= $this->escape($this->lmsg('firstPasswordTitle')) ?></h4>

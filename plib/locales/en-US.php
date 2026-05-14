@@ -1,22 +1,25 @@
 <?php
-$messages = [
+return [
+    // Header and tabs
     'pageTitle'             => 'EnterpriseChat',
-
     'tabStatus'             => 'Status',
     'tabDomains'            => 'Domains',
     'tabConfig'             => 'Configuration',
 
+    // Service card
     'serviceTitle'          => 'Service',
     'lblState'              => 'State',
     'lblEnabled'            => 'Start at boot',
     'lblSince'              => 'Active since',
 
+    // License card
     'licenseTitle'          => 'License',
     'licenseUnavailable'    => 'The server is not responding. Check the service status.',
     'lblEdition'            => 'Edition',
     'lblMaxUsers'           => 'Max concurrent users',
     'btnConfigEdit'         => 'Edit configuration',
 
+    // Bindings card
     'bindingsTitle'         => 'Bound domains',
     'bindingsEmpty'         => 'No domains bound yet.',
     'btnManageDomains'      => 'Manage domains',
@@ -27,13 +30,20 @@ $messages = [
     'btnBind'               => 'Bind',
     'btnUnbind'             => 'Unbind',
     'confirmUnbind'         => 'Remove the reverse proxy from this domain?',
-    'msgBound'              => 'Domain %%d%% bound successfully.',
-    'msgUnbound'            => 'Domain %%d%% unbound.',
+    'msgBound'              => 'Domain %d% bound successfully.',
+    'msgUnbound'            => 'Domain %d% unbound.',
 
+    // Install pending banner
+    'installPendingTitle'   => 'Installation not finished yet',
+    'installPendingHelp'    => 'Plesk could not run the installer with root privileges. SSH into the VPS as root and run this command to finish the deployment:',
+    'installPendingAfter'   => 'After running it, reload this page: the initial admin password will be shown.',
+
+    // Initial password reveal
     'firstPasswordTitle'    => 'Initial admin password',
     'firstPasswordHelp'     => 'Username "admin". Change it right after the first login.',
     'firstPasswordOnce'     => 'This password is shown only once. If lost, regenerate it from the configuration page.',
 
+    // Configuration screen
     'configTitle'           => 'Server configuration',
     'sectionJwt'            => 'Session / JWT',
     'lblLifetime'           => 'Token lifetime (minutes)',

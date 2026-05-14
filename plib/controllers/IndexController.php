@@ -34,6 +34,13 @@ class IndexController extends pm_Controller_Action
         $this->view->licenseStatus = Modules_Enterprisechat_EnterpriseChatService::licenseInfo();
         $this->view->firstPassword = Modules_Enterprisechat_EnterpriseChatService::consumeFirstPassword();
         $this->view->bindings      = Modules_Enterprisechat_NginxConfig::listBindings();
+
+        // Si el servicio sigue inactive y /opt/enterprisechat no existe, es que
+        // Plesk demoto post-install.php a psaadm y el .deb nunca llego a apt-get.
+        // Mostramos al admin el comando manual para terminar la instalacion.
+        $deployed = is_dir('/opt/enterprisechat');
+        $this->view->installPending = !$this->view->serviceStatus['active'] && !$deployed;
+        $this->view->installScript  = Modules_Enterprisechat_Installer::sbinDir() . '/install';
     }
 
     public function domainsAction()

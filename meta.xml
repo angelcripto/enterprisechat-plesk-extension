@@ -54,7 +54,7 @@ licencia e integración con los backups de Plesk.</p>
 </ul>
 ]]></description>
     <version>0.1.0</version>
-    <release>8</release>
+    <release>9</release>
     <vendor>EnterpriseChat</vendor>
     <url>https://enterprisechat.es</url>
     <plesk_min_version>18.0.50</plesk_min_version>
