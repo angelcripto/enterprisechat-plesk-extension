@@ -1,0 +1,10 @@
+<?php /** @var Zend_View $this */ ?>
+<p>
+    <a href="<?= pm_Context::getActionUrl('index', 'domains') ?>">
+        ← <?= $this->escape($this->lmsg('btnBack')) ?>
+    </a>
+</p>
+
+<h2><?= $this->escape($this->lmsg('createSubdomainTitle')) ?></h2>
+
+<?= $this->form ?>

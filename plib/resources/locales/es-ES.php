@@ -21,7 +21,18 @@ $messages = [
     'licenseUnavailable'    => 'El servidor no responde. Comprueba el estado del servicio.',
     'lblEdition'            => 'Edición',
     'lblMaxUsers'           => 'Usuarios concurrentes máx.',
+    'lblExpiresAt'          => 'Caduca',
+    'lblLicensedTo'         => 'Licenciado a',
     'btnConfigEdit'         => 'Editar configuración',
+    'btnRefreshLicense'     => 'Refrescar licencia',
+    'btnStart'              => 'Iniciar',
+    'btnStop'               => 'Parar',
+    'btnRestart'            => 'Reiniciar',
+    'msgLicenseRefreshed'   => 'Licencia recargada desde el servidor.',
+    'btnCreateSubdomain'    => 'Crear subdominio nuevo',
+    'btnBindExisting'       => 'Enlazar dominio existente',
+    'hintLocationSubpath'   => 'Debe terminar con "/" (por ejemplo /chat/). Si vas a usar la raíz del dominio, mejor crea un subdominio dedicado.',
+    'errSubdomainCreate'    => 'No se pudo crear el subdominio:',
 
     // Tarjeta dominios enlazados
     'bindingsTitle'         => 'Dominios enlazados',
@@ -42,8 +53,8 @@ $messages = [
     'btnBind'               => 'Enlazar',
     'btnUnbind'             => 'Desenlazar',
     'confirmUnbind'         => '¿Eliminar el reverse proxy de este dominio?',
-    'msgBound'              => 'Dominio %d% enlazado correctamente.',
-    'msgUnbound'            => 'Dominio %d% desenlazado.',
+    'msgBound'              => 'Dominio %%d%% enlazado correctamente.',
+    'msgUnbound'            => 'Dominio %%d%% desenlazado.',
 
     // Banner instalación incompleta
     'installPendingTitle'   => 'Instalación pendiente de terminar',

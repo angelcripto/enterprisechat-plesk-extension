@@ -17,7 +17,18 @@ return [
     'licenseUnavailable'    => 'The server is not responding. Check the service status.',
     'lblEdition'            => 'Edition',
     'lblMaxUsers'           => 'Max concurrent users',
+    'lblExpiresAt'          => 'Expires at',
+    'lblLicensedTo'         => 'Licensed to',
     'btnConfigEdit'         => 'Edit configuration',
+    'btnRefreshLicense'     => 'Refresh license',
+    'btnStart'              => 'Start',
+    'btnStop'               => 'Stop',
+    'btnRestart'            => 'Restart',
+    'msgLicenseRefreshed'   => 'License reloaded from the server.',
+    'btnCreateSubdomain'    => 'Create new subdomain',
+    'btnBindExisting'       => 'Bind existing domain',
+    'hintLocationSubpath'   => 'Must end with "/" (e.g. /chat/). If you want to use the domain root, create a dedicated subdomain instead.',
+    'errSubdomainCreate'    => 'Could not create the subdomain:',
 
     // Bindings card
     'bindingsTitle'         => 'Bound domains',
@@ -38,8 +49,8 @@ return [
     'btnBind'               => 'Bind',
     'btnUnbind'             => 'Unbind',
     'confirmUnbind'         => 'Remove the reverse proxy from this domain?',
-    'msgBound'              => 'Domain %d% bound successfully.',
-    'msgUnbound'            => 'Domain %d% unbound.',
+    'msgBound'              => 'Domain %%d%% bound successfully.',
+    'msgUnbound'            => 'Domain %%d%% unbound.',
 
     // Install pending banner
     'installPendingTitle'   => 'Installation not finished yet',

@@ -41,6 +41,8 @@
 }
 .ec-badge--ok   { background: #22863a; }
 .ec-badge--down { background: #cb2431; }
+.ec-badge--free { background: #6a737d; }
+.ec-badge--pro  { background: #0366d6; }
 
 .ec-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .ec-btns .btn { margin: 0; }

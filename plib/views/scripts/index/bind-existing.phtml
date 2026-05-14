@@ -1,10 +1,10 @@
 <?php /** @var Zend_View $this */ ?>
 <p>
-    <a href="<?= pm_Context::getBaseUrl() ?>">
+    <a href="<?= pm_Context::getActionUrl('index', 'domains') ?>">
         ← <?= $this->escape($this->lmsg('btnBack')) ?>
     </a>
 </p>
 
-<h2><?= $this->escape($this->lmsg('passwordResetTitle')) ?></h2>
+<h2><?= $this->escape($this->lmsg('bindExistingTitle')) ?></h2>
 
 <?= $this->form ?>

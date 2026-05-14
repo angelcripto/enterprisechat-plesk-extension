@@ -1,8 +1,6 @@
 <?php /** @var Zend_View $this */ ?>
 <link rel="stylesheet" href="<?= pm_Context::getBaseUrl() ?>css/extension.css">
 
-<h2><?= $this->escape($this->lmsg('pageTitle')) ?></h2>
-
 <?php if (!empty($this->installPending)): ?>
 <div class="msg-box msg-warning">
     <h4><?= $this->escape($this->lmsg('installPendingTitle')) ?></h4>
@@ -40,9 +38,9 @@
             <dd><?= $this->escape($s['since'] ?? '—') ?></dd>
         </dl>
         <div class="ec-btns">
-            <button class="btn" data-svc-action="start">Start</button>
-            <button class="btn" data-svc-action="stop">Stop</button>
-            <button class="btn btn-primary" data-svc-action="restart">Restart</button>
+            <button class="btn" data-svc-action="start"><?= $this->escape($this->lmsg('btnStart')) ?></button>
+            <button class="btn" data-svc-action="stop"><?= $this->escape($this->lmsg('btnStop')) ?></button>
+            <button class="btn btn-primary" data-svc-action="restart"><?= $this->escape($this->lmsg('btnRestart')) ?></button>
         </div>
     </section>
 
@@ -54,16 +52,31 @@
             <?php $l = $this->licenseStatus; ?>
             <dl class="ec-dl">
                 <dt><?= $this->escape($this->lmsg('lblEdition')) ?></dt>
-                <dd><strong><?= $this->escape($l['edition'] ?? '—') ?></strong></dd>
+                <dd>
+                    <span class="ec-badge ec-badge--<?= ($l['edition'] === 'Pro') ? 'pro' : 'free' ?>">
+                        <?= $this->escape($l['edition'] ?? '—') ?>
+                    </span>
+                </dd>
                 <dt><?= $this->escape($this->lmsg('lblMaxUsers')) ?></dt>
                 <dd><?= (int)($l['maxConcurrentUsers'] ?? 0) ?></dd>
+                <?php if (!empty($l['expiresAt'])): ?>
+                <dt><?= $this->escape($this->lmsg('lblExpiresAt')) ?></dt>
+                <dd><?= $this->escape($l['expiresAt']) ?></dd>
+                <?php endif; ?>
+                <?php if (!empty($l['licensedTo'])): ?>
+                <dt><?= $this->escape($this->lmsg('lblLicensedTo')) ?></dt>
+                <dd><?= $this->escape($l['licensedTo']) ?></dd>
+                <?php endif; ?>
             </dl>
         <?php endif; ?>
-        <p>
-            <a class="btn" href="<?= pm_Context::getBaseUrl() ?>index.php/config/edit">
+        <div class="ec-btns">
+            <a class="btn" href="<?= pm_Context::getActionUrl('index', 'refresh-license') ?>">
+                <?= $this->escape($this->lmsg('btnRefreshLicense')) ?>
+            </a>
+            <a class="btn" href="<?= pm_Context::getActionUrl('config', 'edit') ?>">
                 <?= $this->escape($this->lmsg('btnConfigEdit')) ?>
             </a>
-        </p>
+        </div>
     </section>
 
     <section class="ec-card">
@@ -73,12 +86,12 @@
         <?php else: ?>
             <ul class="ec-list">
                 <?php foreach ($this->bindings as $d): ?>
-                    <li><a href="https://<?= $this->escape($d) ?>/" target="_blank"><?= $this->escape($d) ?></a></li>
+                    <li><a href="https://<?= $this->escape($d) ?>/" target="_blank" rel="noopener"><?= $this->escape($d) ?></a></li>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
         <p>
-            <a class="btn btn-primary" href="<?= pm_Context::getBaseUrl() ?>index.php/index/domains">
+            <a class="btn btn-primary" href="<?= pm_Context::getActionUrl('index', 'domains') ?>">
                 <?= $this->escape($this->lmsg('btnManageDomains')) ?>
             </a>
         </p>
@@ -91,14 +104,28 @@
     document.querySelectorAll('[data-svc-action]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var act = btn.getAttribute('data-svc-action');
+            var orig = btn.textContent;
             btn.disabled = true;
-            fetch(base + act, { method: 'POST', headers: { 'X-Requested-With': 'fetch' } })
-                .then(function (r) { return r.json(); })
+            btn.textContent = '…';
+            fetch(base + act, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' }
+            })
+                .then(function (r) { return r.json().catch(function () { return { ok: false, error: 'HTTP ' + r.status }; }); })
                 .then(function (j) {
-                    if (!j.ok) { alert(j.err || j.error || 'Error'); }
+                    if (!j.ok) {
+                        alert(j.err || j.error || 'Error');
+                        btn.disabled = false;
+                        btn.textContent = orig;
+                        return;
+                    }
                     location.reload();
                 })
-                .catch(function (e) { alert(String(e)); btn.disabled = false; });
+                .catch(function (e) {
+                    alert(String(e));
+                    btn.disabled = false;
+                    btn.textContent = orig;
+                });
         });
     });
 })();
