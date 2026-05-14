@@ -37,7 +37,7 @@ PUBLISH="$STAGE/publish"
 PKG="$STAGE/pkg"
 EXT_STAGE="$STAGE/ext"
 
-mkdir -p "$PUBLISH" "$PKG/DEBIAN" "$PKG/opt/enterprisechat" "$PKG/etc/systemd/system" "$EXT_STAGE/payload"
+mkdir -p "$PUBLISH" "$PKG/DEBIAN" "$PKG/opt/enterprisechat" "$PKG/etc/systemd/system" "$EXT_STAGE"
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 
@@ -83,7 +83,11 @@ dpkg-deb --build --root-owner-group "$PKG" "$DEB"
 echo "==> Staging extension zip"
 cp -r "$EXT_DIR/meta.xml" "$EXT_DIR/plib" "$EXT_STAGE/"
 [[ -d "$EXT_DIR/htdocs" ]] && cp -r "$EXT_DIR/htdocs" "$EXT_STAGE/"
-cp "$DEB" "$EXT_STAGE/payload/"
+
+# El .deb debe vivir dentro de plib/ para que Plesk lo despliegue
+# (cualquier carpeta fuera de plib/ o htdocs/ se descarta en el deploy).
+mkdir -p "$EXT_STAGE/plib/payload"
+cp "$DEB" "$EXT_STAGE/plib/payload/"
 
 ZIP="$STAGE/enterprisechat-plesk-${VERSION}.zip"
 ( cd "$EXT_STAGE" && zip -rq "$ZIP" . )
