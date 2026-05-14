@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+    <id>enterprisechat</id>
+    <name>EnterpriseChat</name>
+    <description>Chat empresarial open source autoalojado. Servidor .NET 8 + SignalR + SQLite, gestionado desde Plesk: instalar, configurar dominio, reverse proxy con WebSocket y backup integrado.</description>
+    <version>0.1.0</version>
+    <release>1</release>
+    <vendor>EnterpriseChat</vendor>
+    <url>https://enterprisechat.es</url>
+    <plesk_min_version>18.0.50</plesk_min_version>
+    <required>
+        <php_version min="7.4"/>
+        <os>
+            <distribution>Ubuntu</distribution>
+            <distribution>Debian</distribution>
+            <distribution>AlmaLinux</distribution>
+            <distribution>RockyLinux</distribution>
+            <distribution>CloudLinux</distribution>
+        </os>
+    </required>
+    <icon>htdocs/images/icon.png</icon>
+    <category>Communication</category>
+</module>

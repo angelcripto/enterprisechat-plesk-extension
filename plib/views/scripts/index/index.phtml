@@ -1,0 +1,96 @@
+<?php /** @var Zend_View $this */ ?>
+<link rel="stylesheet" href="<?= pm_Context::getBaseUrl() ?>css/extension.css">
+
+<h2><?= $this->escape($this->lmsg('pageTitle')) ?></h2>
+
+<?php if ($this->firstPassword): ?>
+<div class="msg-box msg-warning">
+    <h4><?= $this->escape($this->lmsg('firstPasswordTitle')) ?></h4>
+    <p><?= $this->escape($this->lmsg('firstPasswordHelp')) ?></p>
+    <pre class="ec-secret"><?= $this->escape($this->firstPassword) ?></pre>
+    <p class="ec-warn"><?= $this->escape($this->lmsg('firstPasswordOnce')) ?></p>
+</div>
+<?php endif; ?>
+
+<div class="ec-grid">
+    <section class="ec-card">
+        <h3><?= $this->escape($this->lmsg('serviceTitle')) ?></h3>
+        <?php $s = $this->serviceStatus; ?>
+        <dl class="ec-dl">
+            <dt><?= $this->escape($this->lmsg('lblState')) ?></dt>
+            <dd>
+                <span class="ec-badge ec-badge--<?= $s['active'] ? 'ok' : 'down' ?>">
+                    <?= $this->escape($s['raw']) ?>
+                </span>
+            </dd>
+            <dt><?= $this->escape($this->lmsg('lblEnabled')) ?></dt>
+            <dd><?= $s['enabled'] ? '✓' : '—' ?></dd>
+            <dt>PID</dt>
+            <dd><?= $this->escape($s['pid'] ?? '—') ?></dd>
+            <dt><?= $this->escape($this->lmsg('lblSince')) ?></dt>
+            <dd><?= $this->escape($s['since'] ?? '—') ?></dd>
+        </dl>
+        <div class="ec-btns">
+            <button class="btn" data-svc-action="start">Start</button>
+            <button class="btn" data-svc-action="stop">Stop</button>
+            <button class="btn btn-primary" data-svc-action="restart">Restart</button>
+        </div>
+    </section>
+
+    <section class="ec-card">
+        <h3><?= $this->escape($this->lmsg('licenseTitle')) ?></h3>
+        <?php if (!$this->licenseStatus): ?>
+            <p class="ec-muted"><?= $this->escape($this->lmsg('licenseUnavailable')) ?></p>
+        <?php else: ?>
+            <?php $l = $this->licenseStatus; ?>
+            <dl class="ec-dl">
+                <dt><?= $this->escape($this->lmsg('lblEdition')) ?></dt>
+                <dd><strong><?= $this->escape($l['edition'] ?? '—') ?></strong></dd>
+                <dt><?= $this->escape($this->lmsg('lblMaxUsers')) ?></dt>
+                <dd><?= (int)($l['maxConcurrentUsers'] ?? 0) ?></dd>
+            </dl>
+        <?php endif; ?>
+        <p>
+            <a class="btn" href="<?= pm_Context::getBaseUrl() ?>index.php/config/edit">
+                <?= $this->escape($this->lmsg('btnConfigEdit')) ?>
+            </a>
+        </p>
+    </section>
+
+    <section class="ec-card">
+        <h3><?= $this->escape($this->lmsg('bindingsTitle')) ?></h3>
+        <?php if (empty($this->bindings)): ?>
+            <p class="ec-muted"><?= $this->escape($this->lmsg('bindingsEmpty')) ?></p>
+        <?php else: ?>
+            <ul class="ec-list">
+                <?php foreach ($this->bindings as $d): ?>
+                    <li><a href="https://<?= $this->escape($d) ?>/" target="_blank"><?= $this->escape($d) ?></a></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        <p>
+            <a class="btn btn-primary" href="<?= pm_Context::getBaseUrl() ?>index.php/index/domains">
+                <?= $this->escape($this->lmsg('btnManageDomains')) ?>
+            </a>
+        </p>
+    </section>
+</div>
+
+<script>
+(function () {
+    var base = '<?= pm_Context::getBaseUrl() ?>index.php/service/';
+    document.querySelectorAll('[data-svc-action]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var act = btn.getAttribute('data-svc-action');
+            btn.disabled = true;
+            fetch(base + act, { method: 'POST', headers: { 'X-Requested-With': 'fetch' } })
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    if (!j.ok) { alert(j.err || j.error || 'Error'); }
+                    location.reload();
+                })
+                .catch(function (e) { alert(String(e)); btn.disabled = false; });
+        });
+    });
+})();
+</script>

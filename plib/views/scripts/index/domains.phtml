@@ -1,0 +1,55 @@
+<?php /** @var Zend_View $this */ ?>
+<link rel="stylesheet" href="<?= pm_Context::getBaseUrl() ?>css/extension.css">
+
+<h2><?= $this->escape($this->lmsg('bindingsTitle')) ?></h2>
+
+<section class="ec-card">
+    <h3><?= $this->escape($this->lmsg('bindNewTitle')) ?></h3>
+    <form method="post" action="<?= pm_Context::getBaseUrl() ?>index.php/index/domains">
+        <input type="hidden" name="do" value="bind">
+        <label>
+            <?= $this->escape($this->lmsg('lblDomain')) ?>
+            <select name="domain" required>
+                <option value=""></option>
+                <?php foreach ($this->domains as $d): ?>
+                    <option value="<?= $this->escape($d) ?>"><?= $this->escape($d) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>
+            <?= $this->escape($this->lmsg('lblLocation')) ?>
+            <input type="text" name="location" value="/" pattern="^/[a-zA-Z0-9_\-/]*$">
+        </label>
+        <button class="btn btn-primary" type="submit">
+            <?= $this->escape($this->lmsg('btnBind')) ?>
+        </button>
+    </form>
+</section>
+
+<section class="ec-card">
+    <h3><?= $this->escape($this->lmsg('currentBindingsTitle')) ?></h3>
+    <?php if (empty($this->bindings)): ?>
+        <p class="ec-muted"><?= $this->escape($this->lmsg('bindingsEmpty')) ?></p>
+    <?php else: ?>
+        <table class="list">
+            <thead><tr><th><?= $this->escape($this->lmsg('lblDomain')) ?></th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($this->bindings as $d): ?>
+                <tr>
+                    <td><a href="https://<?= $this->escape($d) ?>/" target="_blank"><?= $this->escape($d) ?></a></td>
+                    <td>
+                        <form method="post" action="<?= pm_Context::getBaseUrl() ?>index.php/index/domains"
+                              onsubmit="return confirm('<?= $this->escape($this->lmsg('confirmUnbind')) ?>');">
+                            <input type="hidden" name="do" value="unbind">
+                            <input type="hidden" name="domain" value="<?= $this->escape($d) ?>">
+                            <button class="btn" type="submit">
+                                <?= $this->escape($this->lmsg('btnUnbind')) ?>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+</section>

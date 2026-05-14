@@ -1,0 +1,52 @@
+<?php
+$messages = [
+    'pageTitle'             => 'EnterpriseChat',
+
+    'tabStatus'             => 'Status',
+    'tabDomains'            => 'Domains',
+    'tabConfig'             => 'Configuration',
+
+    'serviceTitle'          => 'Service',
+    'lblState'              => 'State',
+    'lblEnabled'            => 'Start at boot',
+    'lblSince'              => 'Active since',
+
+    'licenseTitle'          => 'License',
+    'licenseUnavailable'    => 'The server is not responding. Check the service status.',
+    'lblEdition'            => 'Edition',
+    'lblMaxUsers'           => 'Max concurrent users',
+    'btnConfigEdit'         => 'Edit configuration',
+
+    'bindingsTitle'         => 'Bound domains',
+    'bindingsEmpty'         => 'No domains bound yet.',
+    'btnManageDomains'      => 'Manage domains',
+    'bindNewTitle'          => 'Bind a domain',
+    'currentBindingsTitle'  => 'Current bindings',
+    'lblDomain'             => 'Domain',
+    'lblLocation'           => 'Location (default /)',
+    'btnBind'               => 'Bind',
+    'btnUnbind'             => 'Unbind',
+    'confirmUnbind'         => 'Remove the reverse proxy from this domain?',
+    'msgBound'              => 'Domain %%d%% bound successfully.',
+    'msgUnbound'            => 'Domain %%d%% unbound.',
+
+    'firstPasswordTitle'    => 'Initial admin password',
+    'firstPasswordHelp'     => 'Username "admin". Change it right after the first login.',
+    'firstPasswordOnce'     => 'This password is shown only once. If lost, regenerate it from the configuration page.',
+
+    'configTitle'           => 'Server configuration',
+    'sectionJwt'            => 'Session / JWT',
+    'lblLifetime'           => 'Token lifetime (minutes)',
+    'hintLifetime'          => 'Between 5 and 1440. Default is 60.',
+    'lblRotateKey'          => 'Rotate JWT signing key',
+    'hintRotateKey'         => 'Will invalidate all active sessions and restart the service.',
+
+    'sectionLicense'        => 'License',
+    'licenseKeyStored'      => 'A Pro key is stored (not shown for security).',
+    'lblLicenseKey'         => 'License key',
+
+    'btnSave'               => 'Save',
+    'btnCancel'             => 'Cancel',
+    'msgConfigSaved'        => 'Configuration saved. The service has been restarted if needed.',
+    'errLifetimeRange'      => 'Lifetime must be between 5 and 1440 minutes.',
+];

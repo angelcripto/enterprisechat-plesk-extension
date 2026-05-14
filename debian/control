@@ -1,0 +1,9 @@
+Package: enterprisechat
+Version: 0.1.0
+Section: net
+Priority: optional
+Architecture: amd64
+Maintainer: EnterpriseChat <soporte@enterprisechat.es>
+Depends: libicu70 | libicu72 | libicu74, libssl3 | libssl1.1
+Description: EnterpriseChat self-hosted corporate chat server
+ ASP.NET Core + SignalR + SQLite. Runs as systemd unit on port 5080.

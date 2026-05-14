@@ -1,0 +1,81 @@
+/* EnterpriseChat — Plesk extension styling.
+   Mantener mínimo y coherente con la chrome del panel Plesk. */
+
+.ec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.ec-card {
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+}
+
+.ec-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    color: #2c3e50;
+}
+
+.ec-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 0.75rem;
+    margin: 0 0 0.75rem 0;
+}
+.ec-dl dt { color: #6a737d; font-weight: normal; }
+.ec-dl dd { margin: 0; }
+
+.ec-badge {
+    display: inline-block;
+    padding: 0.1em 0.6em;
+    border-radius: 10px;
+    font-size: 0.85em;
+    color: #fff;
+    background: #6a737d;
+}
+.ec-badge--ok   { background: #22863a; }
+.ec-badge--down { background: #cb2431; }
+
+.ec-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.ec-btns .btn { margin: 0; }
+
+.ec-list { list-style: none; padding: 0; margin: 0 0 0.75rem 0; }
+.ec-list li { padding: 0.25rem 0; border-bottom: 1px solid #f2f4f6; }
+.ec-list li:last-child { border-bottom: 0; }
+
+.ec-muted { color: #6a737d; font-style: italic; }
+.ec-warn  { color: #b08800; font-size: 0.9em; }
+.ec-hint  { display: block; color: #6a737d; font-size: 0.85em; margin-top: 0.25em; }
+
+.ec-secret {
+    background: #f6f8fa;
+    border: 1px dashed #d0d7de;
+    padding: 0.5rem 0.75rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.05em;
+    user-select: all;
+}
+
+.ec-form label {
+    display: block;
+    margin: 0.75rem 0;
+}
+.ec-form label.ec-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.msg-box.msg-warning {
+    border: 1px solid #f0c000;
+    background: #fff8e1;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}

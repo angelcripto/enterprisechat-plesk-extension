@@ -1,0 +1,21 @@
+# Forzar LF en archivos ejecutados en Linux/Plesk.
+# CRLF en shebang rompe la ejecución del script en el servidor.
+
+* text=auto eol=lf
+
+*.sh        text eol=lf
+*.php       text eol=lf
+*.phtml     text eol=lf
+*.xml       text eol=lf
+*.json      text eol=lf
+*.css       text eol=lf
+*.md        text eol=lf
+
+debian/postinst text eol=lf
+debian/prerm    text eol=lf
+
+# Binarios
+*.png binary
+*.ico binary
+*.zip binary
+*.deb binary

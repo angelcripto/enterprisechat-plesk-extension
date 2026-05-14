@@ -1,0 +1,43 @@
+<?php /** @var Zend_View $this */ ?>
+<link rel="stylesheet" href="<?= pm_Context::getBaseUrl() ?>css/extension.css">
+
+<h2><?= $this->escape($this->lmsg('configTitle')) ?></h2>
+
+<form method="post" action="<?= pm_Context::getBaseUrl() ?>index.php/config/edit" class="ec-form">
+    <section class="ec-card">
+        <h3><?= $this->escape($this->lmsg('sectionJwt')) ?></h3>
+        <label>
+            <?= $this->escape($this->lmsg('lblLifetime')) ?>
+            <input type="number" name="lifetimeMinutes" min="5" max="1440"
+                   value="<?= (int)$this->lifetimeMinutes ?>">
+            <span class="ec-hint"><?= $this->escape($this->lmsg('hintLifetime')) ?></span>
+        </label>
+
+        <label class="ec-checkbox">
+            <input type="checkbox" name="rotateSigningKey" value="1">
+            <?= $this->escape($this->lmsg('lblRotateKey')) ?>
+        </label>
+        <p class="ec-hint"><?= $this->escape($this->lmsg('hintRotateKey')) ?></p>
+    </section>
+
+    <section class="ec-card">
+        <h3><?= $this->escape($this->lmsg('sectionLicense')) ?></h3>
+        <?php if ($this->hasLicenseKey): ?>
+            <p class="ec-muted"><?= $this->escape($this->lmsg('licenseKeyStored')) ?></p>
+        <?php endif; ?>
+        <label>
+            <?= $this->escape($this->lmsg('lblLicenseKey')) ?>
+            <input type="text" name="licenseKey" autocomplete="off"
+                   placeholder="EC-XXXX-XXXX-XXXX-XXXX">
+        </label>
+    </section>
+
+    <p>
+        <button type="submit" class="btn btn-primary">
+            <?= $this->escape($this->lmsg('btnSave')) ?>
+        </button>
+        <a class="btn" href="<?= pm_Context::getBaseUrl() ?>index.php/index/index">
+            <?= $this->escape($this->lmsg('btnCancel')) ?>
+        </a>
+    </p>
+</form>

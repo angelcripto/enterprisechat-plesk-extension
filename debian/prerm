@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# .deb prerm: detiene el servicio antes de retirar archivos. NO borra
+# /opt/enterprisechat/data ni appsettings: el hook pre-uninstall de la
+# extensión decide si purgar (con confirmación del admin en la UI).
+#
+set -e
+
+case "$1" in
+    remove|upgrade|deconfigure)
+        if systemctl is-active --quiet enterprisechat.service 2>/dev/null; then
+            systemctl stop enterprisechat.service || true
+        fi
+        if systemctl is-enabled --quiet enterprisechat.service 2>/dev/null; then
+            systemctl disable enterprisechat.service || true
+        fi
+        ;;
+esac
+
+exit 0

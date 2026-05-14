@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# .deb postinst: crea usuario de sistema, prepara directorios, recarga
+# systemd. La activación efectiva (enable/start) la dispara el hook
+# post-install.sh de la extensión Plesk, no este postinst — así dpkg puede
+# ejecutarse desde la UI sin asumir que el panel quiere arrancarlo ya.
+#
+set -e
+
+INSTALL_DIR=/opt/enterprisechat
+SERVICE_USER=enterprisechat
+
+case "$1" in
+    configure)
+        if ! id "$SERVICE_USER" >/dev/null 2>&1; then
+            useradd --system --create-home --home-dir "$INSTALL_DIR" \
+                    --shell /usr/sbin/nologin "$SERVICE_USER"
+        fi
+
+        mkdir -p "$INSTALL_DIR/data" "$INSTALL_DIR/logs" \
+                 "$INSTALL_DIR/certs" "$INSTALL_DIR/plugins"
+
+        chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
+        chmod 0750 "$INSTALL_DIR/certs"
+        chmod 0755 "$INSTALL_DIR/EnterpriseChat.Server" || true
+
+        systemctl daemon-reload || true
+        ;;
+esac
+
+exit 0
