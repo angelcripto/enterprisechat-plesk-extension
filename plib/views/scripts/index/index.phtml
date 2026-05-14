@@ -101,20 +101,46 @@
 <script>
 (function () {
     var base = '<?= pm_Context::getBaseUrl() ?>index.php/service/';
+
+    // Plesk usa CSRF token (forgery_protection_token) en POSTs. Sin él,
+    // ForgeryProtection::preDispatch corta la petición ANTES de llegar al
+    // ServiceController y responde con 500. El token vive en la cookie
+    // forgery_protection_token y debe re-enviarse como header.
+    function getCookie(name) {
+        var m = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+    function csrfToken() {
+        return getCookie('forgery_protection_token')
+            || (document.querySelector('meta[name=forgery_protection_token]') || {}).content
+            || '';
+    }
+
     document.querySelectorAll('[data-svc-action]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var act = btn.getAttribute('data-svc-action');
             var orig = btn.textContent;
             btn.disabled = true;
             btn.textContent = '…';
+
             fetch(base + act, {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'fetch' }
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'fetch',
+                    'X-Forgery-Protection-Token': csrfToken(),
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'forgery_protection_token=' + encodeURIComponent(csrfToken()),
             })
-                .then(function (r) { return r.json().catch(function () { return { ok: false, error: 'HTTP ' + r.status }; }); })
+                .then(function (r) {
+                    return r.json().catch(function () {
+                        return { ok: false, error: 'HTTP ' + r.status };
+                    });
+                })
                 .then(function (j) {
                     if (!j.ok) {
-                        alert(j.err || j.error || 'Error');
+                        alert((j.err || j.error || 'Error') + (j.trace ? '\n@ ' + j.trace : ''));
                         btn.disabled = false;
                         btn.textContent = orig;
                         return;
