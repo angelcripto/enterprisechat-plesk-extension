@@ -7,13 +7,13 @@
  * entorno KEEP_DATA=0 antes de disparar la desinstalación.
  */
 
-$moduleDir = realpath(__DIR__ . '/../..');
-if ($moduleDir === false) {
-    fwrite(STDERR, "pre-uninstall: cannot resolve module directory\n");
+$hooksDir = realpath(__DIR__ . '/../hooks');
+if ($hooksDir === false) {
+    fwrite(STDERR, "pre-uninstall: hooks directory missing\n");
     exit(1);
 }
 
-$hook = $moduleDir . '/hooks/pre-uninstall.sh';
+$hook = $hooksDir . '/pre-uninstall.sh';
 if (!is_file($hook)) {
     fwrite(STDERR, "pre-uninstall: hook not found: $hook\n");
     exit(1);

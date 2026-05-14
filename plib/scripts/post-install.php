@@ -12,13 +12,22 @@
  * (suficiente para apt-get install + systemctl + escribir en /opt/).
  */
 
-$moduleDir = realpath(__DIR__ . '/../..');
-if ($moduleDir === false) {
-    fwrite(STDERR, "post-install: cannot resolve module directory\n");
+// Plesk despliega el zip de la extensión así:
+//
+//   <zip>/plib/*    →  /opt/psa/admin/plib/modules/<id>/*
+//   <zip>/htdocs/*  →  /opt/psa/admin/htdocs/modules/<id>/*
+//   <zip>/meta.xml  →  metadatos internos del catálogo
+//
+// Carpetas fuera de plib/ y htdocs/ NO se despliegan. Por eso los hooks
+// shell viven en plib/hooks/ y desde aquí los localizamos como hermanos
+// del directorio scripts/.
+$hooksDir = realpath(__DIR__ . '/../hooks');
+if ($hooksDir === false) {
+    fwrite(STDERR, "post-install: hooks directory missing\n");
     exit(1);
 }
 
-$hook = $moduleDir . '/hooks/post-install.sh';
+$hook = $hooksDir . '/post-install.sh';
 if (!is_file($hook)) {
     fwrite(STDERR, "post-install: hook not found: $hook\n");
     exit(1);
@@ -31,8 +40,8 @@ if ($buf !== false && strpos($buf, "\r") !== false) {
     file_put_contents($hook, str_replace("\r", '', $buf));
 }
 @chmod($hook, 0755);
-@chmod($moduleDir . '/hooks/pre-uninstall.sh', 0755);
-@chmod($moduleDir . '/hooks/backup.sh',        0755);
+@chmod($hooksDir . '/pre-uninstall.sh', 0755);
+@chmod($hooksDir . '/backup.sh',        0755);
 
 passthru('bash ' . escapeshellarg($hook) . ' 2>&1', $code);
 exit((int)$code);

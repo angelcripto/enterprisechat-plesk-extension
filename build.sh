@@ -81,7 +81,7 @@ dpkg-deb --build --root-owner-group "$PKG" "$DEB"
 
 # --- 3. Extension zip ------------------------------------------------------
 echo "==> Staging extension zip"
-cp -r "$EXT_DIR/meta.xml" "$EXT_DIR/plib" "$EXT_DIR/hooks" "$EXT_STAGE/"
+cp -r "$EXT_DIR/meta.xml" "$EXT_DIR/plib" "$EXT_STAGE/"
 [[ -d "$EXT_DIR/htdocs" ]] && cp -r "$EXT_DIR/htdocs" "$EXT_STAGE/"
 cp "$DEB" "$EXT_STAGE/payload/"
 
