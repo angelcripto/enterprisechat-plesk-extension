@@ -1,29 +1,27 @@
 <?php
 /**
- * Plesk SDK hook: ejecutado por el panel antes de retirar la extensión.
+ * Plesk SDK hook ejecutado antes de retirar la extensión. Plesk lo corre
+ * como `psaadm`; las operaciones reales (systemctl disable, apt-get remove,
+ * limpieza de snippets nginx) viven en el sbin wrapper `uninstall`.
  *
- * Por defecto conservamos los datos. Si el admin pulsa "purgar datos" en
- * la UI, la acción correspondiente del controller exporta la variable de
- * entorno KEEP_DATA=0 antes de disparar la desinstalación.
+ * KEEP_DATA viene en el entorno cuando el admin pulsa "purgar también
+ * datos" en la UI. Si no se pasa, se conserva /opt/enterprisechat/.
  */
 
-$hooksDir = realpath(__DIR__ . '/../hooks');
-if ($hooksDir === false) {
-    fwrite(STDERR, "pre-uninstall: hooks directory missing\n");
-    exit(1);
+$keepData = getenv('KEEP_DATA');
+$keepData = ($keepData === '0') ? '0' : '1';
+
+$result = pm_ApiCli::callSbin(
+    'uninstall',
+    ['--keep-data=' . $keepData],
+    pm_ApiCli::RESULT_FULL
+);
+
+if (!empty($result['stdout'])) {
+    fwrite(STDOUT, $result['stdout']);
+}
+if (!empty($result['stderr'])) {
+    fwrite(STDERR, $result['stderr']);
 }
 
-$hook = $hooksDir . '/pre-uninstall.sh';
-if (!is_file($hook)) {
-    fwrite(STDERR, "pre-uninstall: hook not found: $hook\n");
-    exit(1);
-}
-
-@chmod($hook, 0755);
-
-$keepData = getenv('KEEP_DATA') ?: '1';
-$cmd = 'KEEP_DATA=' . escapeshellarg($keepData)
-     . ' bash ' . escapeshellarg($hook) . ' 2>&1';
-
-passthru($cmd, $code);
-exit((int)$code);
+exit((int)($result['code'] ?? 1));

@@ -1,61 +1,28 @@
 <?php
 /**
- * Punto único para ejecutar los hooks shell desde código PHP. Se llama desde
- * los handlers Plesk pm_Hook_Install / pm_Hook_Uninstall y desde los botones
- * de "reparar instalación" / "purgar datos" en la UI.
+ * Disparador desde código PHP (controllers, hooks UI) para los wrappers
+ * sbin que Plesk despliega con setuid root. Centraliza el contrato con el
+ * panel: el resto de la extensión nunca llama a `systemctl` ni a `apt-get`
+ * directamente — siempre pasa por aquí.
  *
- * Mantenemos la lógica real en bash (hooks/*.sh) para que sea trivial
- * auditarla y, llegado el caso, ejecutarla a mano por SSH.
+ * Wrappers correspondientes en plib/sbin/:
+ *   - install         lógica de post-install (apt-get + secretos + start)
+ *   - uninstall       parada + remove (--keep-data=0|1)
+ *   - systemctl-wrap  control de enterprisechat.service
  */
 class Modules_Enterprisechat_Installer
 {
-    /**
-     * Directorio donde Plesk despliega los hooks bash. Coincide con
-     * pm_Context::getPlibDir() . '/hooks' porque desde 0.1.0-3 los hooks
-     * viven dentro de plib/hooks/ (Plesk no copia carpetas que estén fuera
-     * de plib/ o htdocs/).
-     */
-    public static function hooksDir(): string
-    {
-        return pm_Context::getPlibDir() . '/hooks';
-    }
-
     public static function runPostInstall(): array
     {
-        return self::runHook('post-install.sh', []);
+        return pm_ApiCli::callSbin('install', [], pm_ApiCli::RESULT_FULL);
     }
 
     public static function runPreUninstall(bool $purgeData = false): array
     {
-        $env = $purgeData ? ['KEEP_DATA' => '0'] : ['KEEP_DATA' => '1'];
-        return self::runHook('pre-uninstall.sh', [], $env);
-    }
-
-    public static function runBackup(string $dest): array
-    {
-        return self::runHook('backup.sh', [$dest]);
-    }
-
-    private static function runHook(string $hookFile, array $args, array $env = []): array
-    {
-        $script = self::hooksDir() . '/' . $hookFile;
-        if (!is_file($script)) {
-            throw new pm_Exception("Hook no encontrado: $script");
-        }
-
-        $cmd = ['bash', $script];
-        foreach ($args as $a) {
-            $cmd[] = (string)$a;
-        }
-
-        $envPairs = [];
-        foreach ($env as $k => $v) {
-            $envPairs[] = $k . '=' . $v;
-        }
-
+        $keep = $purgeData ? '0' : '1';
         return pm_ApiCli::callSbin(
-            'systemctl_wrap',
-            array_merge(['env'], $envPairs, $cmd),
+            'uninstall',
+            ['--keep-data=' . $keep],
             pm_ApiCli::RESULT_FULL
         );
     }

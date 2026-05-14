@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# Wrapper sbin para systemctl, restringido a enterprisechat.service. Plesk
+# lo despliega setuid root; la UI llama vía pm_ApiCli::callSbin().
+#
+# Filtro de seguridad: solo se ejecuta systemctl si alguno de los argumentos
+# nombra enterprisechat (con o sin sufijo .service). Cualquier otro uso
+# (sshd, nginx, etc.) se rechaza para que el wrapper no se convierta en una
+# escalada de privilegios genérica.
+#
+set -euo pipefail
+
+allowed=0
+for arg in "$@"; do
+    case "$arg" in
+        enterprisechat|enterprisechat.service) allowed=1; break ;;
+    esac
+done
+
+if [[ "$allowed" != "1" ]]; then
+    echo "systemctl-wrap: solo se permiten operaciones sobre enterprisechat.service" >&2
+    exit 2
+fi
+
+exec systemctl "$@"

@@ -13,17 +13,20 @@ class Modules_Enterprisechat_EnterpriseChatService
 
     public static function status(): array
     {
-        $active = self::systemctl('is-active');
+        $active  = self::systemctl('is-active');
         $enabled = self::systemctl('is-enabled');
-        $pid = trim((string)self::systemctlShow('MainPID'));
-        $since = trim((string)self::systemctlShow('ActiveEnterTimestamp'));
+        $pid     = trim((string)self::systemctlShow('MainPID'));
+        $since   = trim((string)self::systemctlShow('ActiveEnterTimestamp'));
+
+        $activeOut  = trim((string)($active['stdout']  ?? ''));
+        $enabledOut = trim((string)($enabled['stdout'] ?? ''));
 
         return [
-            'active'  => trim($active['out']) === 'active',
-            'enabled' => trim($enabled['out']) === 'enabled',
+            'active'  => $activeOut  === 'active',
+            'enabled' => $enabledOut === 'enabled',
             'pid'     => $pid !== '0' ? $pid : null,
             'since'   => $since !== '' ? $since : null,
-            'raw'     => $active['out'],
+            'raw'     => $activeOut !== '' ? $activeOut : 'unknown',
         ];
     }
 
@@ -64,7 +67,7 @@ class Modules_Enterprisechat_EnterpriseChatService
     private static function systemctl(string $verb): array
     {
         return pm_ApiCli::callSbin(
-            'systemctl_wrap',
+            'systemctl-wrap',
             [$verb, self::SERVICE],
             pm_ApiCli::RESULT_FULL
         );
@@ -73,7 +76,7 @@ class Modules_Enterprisechat_EnterpriseChatService
     private static function systemctlShow(string $property): string
     {
         $r = pm_ApiCli::callSbin(
-            'systemctl_wrap',
+            'systemctl-wrap',
             ['show', '-p', $property, '--value', self::SERVICE],
             pm_ApiCli::RESULT_FULL
         );

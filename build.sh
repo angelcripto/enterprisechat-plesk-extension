@@ -89,6 +89,13 @@ cp -r "$EXT_DIR/meta.xml" "$EXT_DIR/plib" "$EXT_STAGE/"
 mkdir -p "$EXT_STAGE/plib/payload"
 cp "$DEB" "$EXT_STAGE/plib/payload/"
 
+# Asegura que los sbin wrappers van marcados como ejecutables (Plesk los
+# despliega setuid root pero respeta el bit de ejecución del archivo de
+# origen). chmod aquí sí se aplica porque $EXT_STAGE está en ext4 (/tmp).
+if [[ -d "$EXT_STAGE/plib/sbin" ]]; then
+    chmod 0755 "$EXT_STAGE/plib/sbin"/*
+fi
+
 ZIP="$STAGE/enterprisechat-plesk-${VERSION}.zip"
 ( cd "$EXT_STAGE" && zip -rq "$ZIP" . )
 
