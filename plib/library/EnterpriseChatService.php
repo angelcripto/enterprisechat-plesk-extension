@@ -1,8 +1,10 @@
 <?php
 /**
  * Wrapper sobre `systemctl` + endpoints HTTP locales del servidor
- * EnterpriseChat. Llamado desde controllers para start/stop/restart/status,
- * consulta de licencia y captura one-shot de la contraseña admin inicial.
+ * EnterpriseChat. Lecturas (is-active, is-enabled, show) funcionan sin
+ * privilegios; las acciones (start/stop/restart) requieren root y por eso
+ * la UI Plesk solo las habilita cuando el panel corre privilegiado, o el
+ * admin tiene que ejecutarlas por SSH.
  */
 class Modules_Enterprisechat_EnterpriseChatService
 {
@@ -13,26 +15,27 @@ class Modules_Enterprisechat_EnterpriseChatService
 
     public static function status(): array
     {
-        $active  = self::systemctl('is-active');
-        $enabled = self::systemctl('is-enabled');
-        $pid     = trim((string)self::systemctlShow('MainPID'));
-        $since   = trim((string)self::systemctlShow('ActiveEnterTimestamp'));
+        $active  = self::run(['is-active',  self::SERVICE]);
+        $enabled = self::run(['is-enabled', self::SERVICE]);
 
-        $activeOut  = trim((string)($active['stdout']  ?? ''));
-        $enabledOut = trim((string)($enabled['stdout'] ?? ''));
+        $pidOut   = self::run(['show', '-p', 'MainPID',              '--value', self::SERVICE]);
+        $sinceOut = self::run(['show', '-p', 'ActiveEnterTimestamp', '--value', self::SERVICE]);
+
+        $pid   = trim($pidOut['out']);
+        $since = trim($sinceOut['out']);
 
         return [
-            'active'  => $activeOut  === 'active',
-            'enabled' => $enabledOut === 'enabled',
-            'pid'     => $pid !== '0' ? $pid : null,
+            'active'  => trim($active['out'])  === 'active',
+            'enabled' => trim($enabled['out']) === 'enabled',
+            'pid'     => ($pid !== '' && $pid !== '0') ? $pid : null,
             'since'   => $since !== '' ? $since : null,
-            'raw'     => $activeOut !== '' ? $activeOut : 'unknown',
+            'raw'     => trim($active['out']) !== '' ? trim($active['out']) : 'unknown',
         ];
     }
 
-    public static function start(): array   { return self::systemctl('start'); }
-    public static function stop(): array    { return self::systemctl('stop'); }
-    public static function restart(): array { return self::systemctl('restart'); }
+    public static function start(): array   { return self::run(['start',   self::SERVICE]); }
+    public static function stop(): array    { return self::run(['stop',    self::SERVICE]); }
+    public static function restart(): array { return self::run(['restart', self::SERVICE]); }
 
     /**
      * Lee /license del propio servidor para mostrar edición + cap actual.
@@ -64,23 +67,23 @@ class Modules_Enterprisechat_EnterpriseChatService
 
     // ----- internos ----------------------------------------------------
 
-    private static function systemctl(string $verb): array
+    private static function run(array $argv): array
     {
-        return pm_ApiCli::callSbin(
-            'systemctl-wrap',
-            [$verb, self::SERVICE],
-            pm_ApiCli::RESULT_FULL
-        );
-    }
+        $cmd = 'systemctl';
+        foreach ($argv as $a) {
+            $cmd .= ' ' . escapeshellarg((string)$a);
+        }
+        $cmd .= ' 2>&1';
 
-    private static function systemctlShow(string $property): string
-    {
-        $r = pm_ApiCli::callSbin(
-            'systemctl-wrap',
-            ['show', '-p', $property, '--value', self::SERVICE],
-            pm_ApiCli::RESULT_FULL
-        );
-        return $r['stdout'] ?? '';
+        $out = [];
+        $code = 0;
+        exec($cmd, $out, $code);
+
+        return [
+            'ok'   => $code === 0,
+            'code' => $code,
+            'out'  => implode("\n", $out),
+        ];
     }
 
     private static function httpGet(string $path, int $timeout): ?string

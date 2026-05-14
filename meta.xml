@@ -20,7 +20,7 @@ El cliente de escritorio (Windows, WPF) se distribuye aparte como MSI y
 se conecta al servidor por HTTPS / WSS al dominio que configures aquí.
     ]]></description>
     <version>0.1.0</version>
-    <release>5</release>
+    <release>6</release>
     <vendor>EnterpriseChat</vendor>
     <url>https://enterprisechat.es</url>
     <plesk_min_version>18.0.50</plesk_min_version>
